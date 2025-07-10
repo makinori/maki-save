@@ -63,7 +63,7 @@ func main() {
 	go func() {
 		time.Sleep(time.Second * 10)
 		if currentIntent == nil {
-			os.Exit(1)
+			os.Exit(0)
 		}
 	}()
 
