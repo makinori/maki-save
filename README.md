@@ -2,6 +2,9 @@
 
 Tiny program to upload images to Immich
 
+Lets you select an album to upload one or more images to.<br/>
+Date and time also gets reset on those images.
+
 Add `key.txt` and `server.txt` to `immich/` folder
 
 Make sure `kdialog` is installed<br/>
