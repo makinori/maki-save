@@ -34,7 +34,7 @@ install:
 [working-directory("mobile")]
 build-apk:
 	go tool fyne package -os android -app-id cafe.maki.immich \
-	-icon icon.png -name "maki immich"
+	-icon icon.png -name "maki immich" -release
 	mv maki_immich.apk ../maki-immich.apk
 
 [group("android")]

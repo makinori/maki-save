@@ -75,7 +75,7 @@ func showScreenError(
 		layout.NewSpacer(),
 	}
 
-	fyne.Do(func() {
+	fyne.DoAndWait(func() {
 		window.SetContent(container.NewVBox(content...))
 	})
 }

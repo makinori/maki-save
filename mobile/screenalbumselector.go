@@ -85,9 +85,10 @@ func getImagesGrid(files []immich.File) fyne.CanvasObject {
 	text = strings.TrimSpace(text)
 
 	label := widget.NewLabel(text)
+	label.Truncation = fyne.TextTruncateEllipsis
 
 	return container.NewBorder(
-		nil, container.NewCenter(label), nil, nil, imagesGrid,
+		nil, label, nil, nil, imagesGrid,
 	)
 }
 
@@ -150,7 +151,7 @@ func showScreenAlbumSelector() {
 		}()
 	}
 
-	fyne.Do(func() {
+	fyne.DoAndWait(func() {
 		window.SetContent(box)
 	})
 }

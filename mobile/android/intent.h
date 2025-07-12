@@ -6,7 +6,8 @@
 struct Intent {
     const char* action;
     const char* type;
-    const char* uri;
+    const char** uri;
+    int uris;
     const char* text;
 };
 

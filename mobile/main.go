@@ -3,6 +3,7 @@ package main
 import (
 	_ "embed"
 	"errors"
+	"fmt"
 	"net/url"
 	"os"
 	"path"
@@ -27,12 +28,19 @@ var (
 )
 
 func showUnknownIntent() {
-	showScreenError("unknown intent", strings.Join([]string{
+	lines := []string{
 		"action: " + currentIntent.Action,
 		"type: " + currentIntent.Type,
-		"uri: " + currentIntent.URI,
-		"text: " + currentIntent.Text,
-	}, "\n"))
+	}
+	if len(currentIntent.URI) == 0 {
+		lines = append(lines, "no uris")
+	} else {
+		for i, uri := range currentIntent.URI {
+			lines = append(lines, fmt.Sprintf("uri[%d]: %s", i, uri))
+		}
+	}
+	lines = append(lines, "text: "+currentIntent.Text)
+	showScreenError("unknown intent", strings.Join(lines, "\n"))
 }
 
 func showFetchingImages(from string) {
@@ -50,7 +58,8 @@ func loop() {
 	}
 
 	intent := android.GetIntent()
-	if intent.Action != android.ACTION_SEND {
+	if intent.Action != android.ACTION_SEND &&
+		intent.Action != android.ACTION_SEND_MULTIPLE {
 		return
 	}
 
@@ -80,15 +89,22 @@ func loop() {
 			showScreenError("unknown url", url.String())
 		}
 	} else if strings.HasPrefix(intent.Type, "image/") {
-		data := android.ReadContent(intent.URI)
-		if len(data) == 0 {
-			showUnknownIntent()
-			return
-		}
+		showFetchingImages("content://")
 
-		currentFiles = []immich.File{{
-			Name: path.Base(intent.URI), Data: data,
-		}}
+		currentFiles = make([]immich.File, len(intent.URI))
+
+		for i, uri := range intent.URI {
+			data := android.ReadContent(uri)
+			if len(data) == 0 {
+				// TODO: maybe show better intent
+				showUnknownIntent()
+				return
+			}
+
+			currentFiles[i] = immich.File{
+				Name: path.Base(uri), Data: data,
+			}
+		}
 
 		showScreenAlbumSelector()
 	} else {

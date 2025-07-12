@@ -36,6 +36,7 @@ static jmethodID intentGetActionMethod;
 static jmethodID intentGetTypeMethod;
 static jmethodID intentGetParcelableExtraMethod;
 static jmethodID intentGetStringExtraMethod;
+static jmethodID intentGetParcelableArrayListExtraMethod;
 
 // https://developer.android.com/reference/android/net/Uri
 static jmethodID uriParseMethod;
@@ -47,6 +48,10 @@ static jmethodID contentResolverOpenInputStreamMethod;
 // https://docs.oracle.com/javase/8/docs/api/java/io/InputStream.html
 static jmethodID inputStreamAvailableMethod;
 static jmethodID inputStreamReadMethod;
+
+// https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html
+static jmethodID arrayListSizeMethod;
+static jmethodID arrayListGetMethod;
 
 void initJNI(uintptr_t javaVM, uintptr_t jniEnv, uintptr_t ctx)
 {
@@ -69,6 +74,8 @@ void initJNI(uintptr_t javaVM, uintptr_t jniEnv, uintptr_t ctx)
         "getType", "()Ljava/lang/String;");
     intentGetParcelableExtraMethod = (*env)->GetMethodID(env, intentClass,
         "getParcelableExtra", "(Ljava/lang/String;)Landroid/os/Parcelable;");
+    intentGetParcelableArrayListExtraMethod = (*env)->GetMethodID(env, intentClass,
+        "getParcelableArrayListExtra", "(Ljava/lang/String;)Ljava/util/ArrayList;");
     // api level 33 tiramisu
     // intentGetParcelableExtraMethod =
     //     (*env)->GetMethodID(env, intentClass, "getParcelableExtra",
@@ -91,6 +98,12 @@ void initJNI(uintptr_t javaVM, uintptr_t jniEnv, uintptr_t ctx)
         "available", "()I");
     inputStreamReadMethod = (*env)->GetMethodID(env, inputStreamClass,
         "read", "([B)I");
+
+    jclass arrayListClass = (*env)->FindClass(env, "java/util/ArrayList");
+    arrayListSizeMethod = (*env)->GetMethodID(env, arrayListClass,
+        "size", "()I");
+    arrayListGetMethod = (*env)->GetMethodID(env, arrayListClass,
+        "get", "(I)Ljava/lang/Object;");
 
     // clean up with
     // (*env)->DeleteLocalRef(env, ...);
@@ -117,17 +130,39 @@ struct Intent getIntent(uintptr_t javaVM, uintptr_t jniEnv, uintptr_t ctx)
         out.type = jstringToC(env, type);
     }
 
-    // get uri
+    // get uri(s)
 
     jstring EXTRA_STREAM = (*env)->NewStringUTF(env, "android.intent.extra.STREAM");
 
-    jobject uri = (*env)->CallObjectMethod(env, intent,
-        intentGetParcelableExtraMethod, EXTRA_STREAM);
+    if (strcmp(out.action, "android.intent.action.SEND_MULTIPLE") == 0) {
+        jobject uriList = (*env)->CallObjectMethod(env, intent,
+            intentGetParcelableArrayListExtraMethod, EXTRA_STREAM);
 
-    if (uri != NULL) {
-        jstring uriString = (*env)->CallObjectMethod(env, uri, uriToStringMethod);
-        if (uriString != NULL) {
-            out.uri = jstringToC(env, uriString);
+        if (uriList != NULL) {
+            out.uris = (*env)->CallIntMethod(env, uriList, arrayListSizeMethod);
+            out.uri = malloc(out.uris * sizeof(const char*));
+
+            for (int i = 0; i < out.uris; ++i) {
+                jobject uri = (*env)->CallObjectMethod(env,
+                    uriList, arrayListGetMethod, i);
+
+                jstring uriString = (*env)->CallObjectMethod(env, uri, uriToStringMethod);
+                if (uriString != NULL) {
+                    out.uri[i] = jstringToC(env, uriString);
+                }
+            }
+        }
+    } else {
+        jobject uri = (*env)->CallObjectMethod(env, intent,
+            intentGetParcelableExtraMethod, EXTRA_STREAM);
+
+        if (uri != NULL) {
+            jstring uriString = (*env)->CallObjectMethod(env, uri, uriToStringMethod);
+            if (uriString != NULL) {
+                out.uris = 1;
+                out.uri = malloc(out.uris * sizeof(const char*));
+                out.uri[0] = jstringToC(env, uriString);
+            }
         }
     }
 

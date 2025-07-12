@@ -44,7 +44,13 @@ func GetIntent() Intent {
 
 		intent.Action = C.GoString(output.action)
 		intent.Type = C.GoString(output._type)
-		intent.URI = C.GoString(output.uri)
+
+		uris := unsafe.Slice(output.uri, output.uris)
+		intent.URI = make([]string, len(uris))
+		for i, uri := range uris {
+			intent.URI[i] = C.GoString(uri)
+		}
+
 		intent.Text = C.GoString(output.text)
 
 		return nil
