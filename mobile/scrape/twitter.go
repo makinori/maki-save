@@ -24,7 +24,7 @@ var (
 	twitterPathRegexp = regexp.MustCompile(`(?i)\/(.+?)\/status\/([0-9]+)`)
 )
 
-func FromTwitter(url *url.URL) ([]immich.File, error) {
+func Twitter(url *url.URL) ([]immich.File, error) {
 	// https://nitter.net/14_B4L/status/1944010573924250078
 
 	twitterPathMatches := twitterPathRegexp.FindStringSubmatch(url.Path)

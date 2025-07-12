@@ -66,28 +66,40 @@ func loop() {
 	currentIntent = &intent
 
 	if intent.Type == "text/plain" {
-		url, err := url.Parse(intent.Text)
+		intentURL, err := url.Parse(intent.Text)
 		if err != nil {
 			showScreenError("failed to parse url", err.Error())
 			return
 		}
 
-		if slices.Contains(scrape.TwitterHosts, url.Host) {
-			showFetchingImages("twitter")
+		tryScrape := func(
+			name string, hosts []string,
+			scrapeFn func(url *url.URL) ([]immich.File, error),
+		) bool {
+			if !slices.Contains(hosts, intentURL.Host) {
+				return false
+			}
 
-			currentFiles, err = scrape.FromTwitter(url)
+			showFetchingImages(name)
+
+			currentFiles, err = scrapeFn(intentURL)
 			if err == nil && len(currentFiles) == 0 {
 				err = errors.New("no images")
 			}
 			if err != nil {
 				showScreenError("failed to retrieve", err.Error())
-				return
+				return true
 			}
 
 			showScreenAlbumSelector()
-		} else {
-			showScreenError("unknown url", url.String())
+			return true
 		}
+
+		if tryScrape("twitter", scrape.TwitterHosts, scrape.Twitter) {
+			return
+		}
+
+		showScreenError("unknown url", intentURL.String())
 	} else if strings.HasPrefix(intent.Type, "image/") {
 		showFetchingImages("content://")
 
