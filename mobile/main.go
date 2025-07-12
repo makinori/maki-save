@@ -14,6 +14,7 @@ import (
 	"fyne.io/fyne/v2/app"
 	"github.com/makinori/maki-immich/immich"
 	"github.com/makinori/maki-immich/mobile/android"
+	"github.com/makinori/maki-immich/mobile/makitheme"
 	"github.com/makinori/maki-immich/mobile/scrape"
 )
 
@@ -97,6 +98,8 @@ func loop() {
 
 func main() {
 	fyneApp = app.New()
+	fyneApp.Settings().SetTheme(&makitheme.Theme{})
+
 	window = fyneApp.NewWindow("maki immich")
 
 	showScreenError(
