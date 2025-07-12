@@ -100,7 +100,10 @@ func loop() {
 		}
 
 		showScreenError("unknown url", intentURL.String())
-	} else if strings.HasPrefix(intent.Type, "image/") {
+
+	} else if strings.HasPrefix(intent.Type, "image/") ||
+		strings.HasPrefix(intent.Type, "video/") {
+
 		showFetchingImages("content://")
 
 		currentFiles = make([]immich.File, len(intent.URI))

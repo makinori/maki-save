@@ -36,19 +36,25 @@ func showScreenError(
 		}()
 	}
 
-	titleText := widget.NewRichText(
-		&widget.TextSegment{
-			Text: title,
-			Style: widget.RichTextStyle{
-				Alignment: fyne.TextAlignCenter,
-				SizeName:  theme.SizeNameSubHeadingText,
-				ColorName: titleColorName,
-				TextStyle: fyne.TextStyle{
-					Bold: true,
+	var content = []fyne.CanvasObject{
+		layout.NewSpacer(),
+	}
+
+	if title != "" {
+		content = append(content, widget.NewRichText(
+			&widget.TextSegment{
+				Text: title,
+				Style: widget.RichTextStyle{
+					Alignment: fyne.TextAlignCenter,
+					SizeName:  theme.SizeNameSubHeadingText,
+					ColorName: titleColorName,
+					TextStyle: fyne.TextStyle{
+						Bold: true,
+					},
 				},
 			},
-		},
-	)
+		))
+	}
 
 	textLabel := widget.NewLabel(text)
 	textLabel.Truncation = fyne.TextTruncateEllipsis
@@ -66,14 +72,12 @@ func showScreenError(
 		paddedContent = append(paddedContent, container.NewCenter(dismissButton))
 	}
 
-	var content = []fyne.CanvasObject{
-		layout.NewSpacer(),
-		titleText,
+	content = append(content,
 		container.New(layout.NewCustomPaddedVBoxLayout(16),
 			paddedContent...,
 		),
 		layout.NewSpacer(),
-	}
+	)
 
 	fyne.DoAndWait(func() {
 		window.SetContent(container.NewVBox(content...))

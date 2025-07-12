@@ -147,11 +147,15 @@ func showScreenAlbumSelector() {
 			fyne.Do(func() {
 				uploadingLabel.SetText("")
 
-				infoDialog := dialog.NewInformation("Info", info, window)
-				infoDialog.SetOnClosed(func() {
-					os.Exit(0)
-				})
-				infoDialog.Show()
+				// infoDialog := dialog.NewInformation("Info", info, window)
+				// infoDialog.SetOnClosed(func() {
+				// 	os.Exit(0)
+				// })
+				// infoDialog.Show()
+
+				showScreenError("", info,
+					ScreenTextOptionNoError,
+				)
 			})
 		}()
 	}
