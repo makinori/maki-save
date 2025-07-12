@@ -2,6 +2,7 @@ package immich
 
 import (
 	"bytes"
+	"context"
 	"crypto/rand"
 	_ "embed"
 	"encoding/hex"
@@ -13,7 +14,10 @@ import (
 	"net/http"
 	"slices"
 	"strings"
+	"sync"
 	"time"
+
+	"golang.org/x/sync/semaphore"
 )
 
 var (
@@ -295,7 +299,7 @@ type File struct {
 	Thumbnail []byte // for rendering ui
 }
 
-func UploadFile(album Album, file File) error {
+func UploadFile(album Album, file File, date time.Time) error {
 	// try to strip exif
 	// ignore error
 	// {
@@ -305,7 +309,7 @@ func UploadFile(album Album, file File) error {
 	// 	}
 	// }
 
-	fileDateStr := time.Now().Format(time.RFC3339Nano)
+	fileDateStr := date.Format(time.RFC3339Nano)
 
 	// upload file which also handles deduplication
 
@@ -335,38 +339,63 @@ func UploadFile(album Album, file File) error {
 func UploadFiles(album Album, files []File) string {
 	// upload files
 
-	var completed []string
-	var failed []string
+	now := time.Now()
 
-	// TODO: optimize by running in parallel
+	completed := make([]string, len(files))
+	failed := make([]string, len(files))
+	mutex := sync.Mutex{}
 
-	for _, file := range files {
-		var err error
-		if file.Err != nil {
-			err = file.Err
-		} else {
-			err = UploadFile(album, file)
-		}
+	maxWorkers := int64(8)
+	ctx := context.Background()
+	sem := semaphore.NewWeighted(maxWorkers)
 
-		switch err {
-		case ErrDuplicate:
-			completed = append(completed, file.Name+" (duplicate)")
-		case nil:
-			completed = append(completed, file.Name)
-		default:
-			// some other error
-			failed = append(failed, file.Name)
+	for i, file := range files {
+		sem.Acquire(ctx, 1)
+		go func(i int) {
+			defer sem.Release(1)
+
+			var err error
+			if file.Err != nil {
+				err = file.Err
+			} else {
+				time := now.Add(time.Millisecond * time.Duration(i*10))
+				err = UploadFile(album, file, time)
+			}
+
+			mutex.Lock()
+			switch err {
+			case ErrDuplicate:
+				completed[i] = file.Name + " (duplicate)"
+			case nil:
+				completed[i] = file.Name
+			default:
+				// some other error
+				failed[i] = file.Name
+			}
+			mutex.Unlock()
+		}(i)
+	}
+
+	sem.Acquire(ctx, maxWorkers)
+
+	finalMsg := fmt.Sprintf("added %d to: %s\n", len(completed), album.AlbumName)
+
+	for _, msg := range completed {
+		if msg != "" {
+			finalMsg += msg + "\n"
 		}
 	}
 
-	finalMsg := fmt.Sprintf("added %d to: %s", len(completed), album.AlbumName)
-
-	if len(completed) > 0 {
-		finalMsg += "\n" + strings.Join(completed, "\n")
+	failedMsg := ""
+	for _, msg := range failed {
+		if msg != "" {
+			failedMsg += msg + "\n"
+		}
 	}
+	failedMsg = strings.TrimSpace(failedMsg)
 
-	if len(failed) > 0 {
-		finalMsg += "\n\nfailed:\n" + strings.Join(failed, "\n")
+	if failedMsg != "" {
+		finalMsg += "\nfailed:\n" + failedMsg
 	}
 
 	return finalMsg
