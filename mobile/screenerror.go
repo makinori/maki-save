@@ -16,7 +16,6 @@ type ScreenTextOption uint8
 
 const (
 	ScreenTextOptionNoError ScreenTextOption = iota
-	ScreenTextOptionNoSelfDestruct
 	ScreenTextOptionNoDismiss
 )
 
@@ -27,9 +26,8 @@ func showScreenError(
 
 	if slices.Contains(options, ScreenTextOptionNoError) {
 		titleColorName = ""
-	}
-
-	if !slices.Contains(options, ScreenTextOptionNoSelfDestruct) {
+	} else {
+		// errors self destruct
 		go func() {
 			time.Sleep(time.Second * 10)
 			os.Exit(0)

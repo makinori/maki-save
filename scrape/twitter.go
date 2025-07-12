@@ -122,6 +122,14 @@ func Nitter(url *url.URL) ([]immich.File, error) {
 	return files, nil
 }
 
+type VXTwitterMediaType string
+
+const (
+	VXTwitterMediaTypeVideo VXTwitterMediaType = "video"
+	VXTwitterMediaTypeImage VXTwitterMediaType = "image"
+	VXTwitterMediaTypeGif   VXTwitterMediaType = "gif"
+)
+
 type VXTwitterRes struct {
 	// conversationID: string;
 	// date: string;
@@ -133,9 +141,9 @@ type VXTwitterRes struct {
 		// altText: string;
 		// duration_millis: number;
 		// size: { width: number; height: number };
-		// thumbnail_url: string;
-		// type: "video" | "image" | "gif";
-		URL string `json:"url"`
+		ThumbnailURL string             `json:"thumbnail_url"`
+		Type         VXTwitterMediaType `json:"type"`
+		URL          string             `json:"url"`
 	} `json:"media_extended"`
 	// possibly_sensitive: boolean;
 	// qrtURL: null;
@@ -202,6 +210,23 @@ func VXTwitter(url *url.URL) ([]immich.File, error) {
 			if err != nil {
 				files[i].Err = err
 				return
+			}
+
+			if media.Type == VXTwitterMediaTypeVideo ||
+				media.Type == VXTwitterMediaTypeGif {
+
+				res, err := http.Get(media.ThumbnailURL)
+				if err != nil {
+					files[i].Err = err
+					return
+				}
+				defer res.Body.Close()
+
+				files[i].Thumbnail, err = io.ReadAll(res.Body)
+				if err != nil {
+					files[i].Err = err
+					return
+				}
 			}
 		}()
 	}

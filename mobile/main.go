@@ -45,9 +45,8 @@ func showUnknownIntent() {
 
 func showFetchingImages(from string) {
 	showScreenError(
-		"fetching images", "from "+from+"...",
+		"fetching", "from "+from+"...",
 		ScreenTextOptionNoError,
-		ScreenTextOptionNoSelfDestruct,
 		ScreenTextOptionNoDismiss,
 	)
 }
@@ -111,8 +110,10 @@ func loop() {
 		for i, uri := range intent.URI {
 			data := android.ReadContent(uri)
 			if len(data) == 0 {
-				// TODO: maybe show better intent
-				showUnknownIntent()
+				showScreenError(
+					"failed to read content",
+					"returned 0 for uri:\n"+uri,
+				)
 				return
 			}
 
@@ -136,7 +137,6 @@ func main() {
 	showScreenError(
 		"maki immich", "share an image to this app",
 		ScreenTextOptionNoError,
-		ScreenTextOptionNoSelfDestruct,
 	)
 
 	go func() {

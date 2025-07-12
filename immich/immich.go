@@ -289,9 +289,10 @@ func addToAlbum(albumId string, assetId string) error {
 }
 
 type File struct {
-	Data []byte
-	Name string
-	Err  error // if failed to read
+	Data      []byte
+	Name      string
+	Err       error  // if failed to read
+	Thumbnail []byte // for rendering ui
 }
 
 func UploadFile(album Album, file File) error {
@@ -336,6 +337,8 @@ func UploadFiles(album Album, files []File) string {
 
 	var completed []string
 	var failed []string
+
+	// TODO: optimize by running in parallel
 
 	for _, file := range files {
 		var err error

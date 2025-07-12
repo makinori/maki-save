@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"image/color"
+	"io"
 	"math"
 	"os"
 	"strings"
@@ -52,9 +53,15 @@ func getImageWidget(file immich.File) fyne.CanvasObject {
 	)
 
 	go func() {
-		image := canvas.NewImageFromReader(bytes.NewReader(file.Data), file.Name)
+		var reader io.Reader
+		if len(file.Thumbnail) > 0 {
+			reader = bytes.NewReader(file.Thumbnail)
+		} else {
+			reader = bytes.NewReader(file.Data)
+		}
+
+		image := canvas.NewImageFromReader(reader, file.Name)
 		image.FillMode = canvas.ImageFillContain
-		// image.SetMinSize(emptyImage.MinSize())
 		fyne.Do(func() {
 			imageStack.Objects[1] = image
 		})
