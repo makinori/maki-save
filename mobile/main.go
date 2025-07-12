@@ -16,7 +16,7 @@ import (
 	"github.com/makinori/maki-immich/immich"
 	"github.com/makinori/maki-immich/mobile/android"
 	"github.com/makinori/maki-immich/mobile/makitheme"
-	"github.com/makinori/maki-immich/mobile/scrape"
+	"github.com/makinori/maki-immich/scrape"
 )
 
 var (
