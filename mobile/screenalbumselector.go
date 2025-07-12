@@ -76,19 +76,24 @@ func getImagesGrid(files []immich.File) fyne.CanvasObject {
 		container.NewGridWithColumns(cols, images...),
 	)
 
-	text := ""
+	textNames := ""
+	textSizes := ""
 	for _, file := range files {
-		text += fmt.Sprintf("%s (%s)\n",
-			file.Name, bytesToString(len(file.Data)),
-		)
+		textNames += file.Name + "\n"
+		textSizes += "(" + bytesToString(len(file.Data)) + ")\n"
 	}
-	text = strings.TrimSpace(text)
+	textNames = strings.TrimSpace(textNames)
+	textSizes = strings.TrimSpace(textSizes)
 
-	label := widget.NewLabel(text)
-	label.Truncation = fyne.TextTruncateEllipsis
+	labelNames := widget.NewLabel(textNames)
+	labelNames.Truncation = fyne.TextTruncateEllipsis
+
+	labelSizes := widget.NewLabel(textSizes)
 
 	return container.NewBorder(
-		nil, label, nil, nil, imagesGrid,
+		nil, container.NewBorder(
+			nil, nil, nil, labelSizes, labelNames,
+		), nil, nil, imagesGrid,
 	)
 }
 
