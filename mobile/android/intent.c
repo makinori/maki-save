@@ -1,3 +1,7 @@
+// clang-format off
+//go:build android
+// clang-format on
+
 #include "intent.h"
 
 #include <jni.h>
@@ -31,6 +35,7 @@ static jmethodID activityGetIntendMethod;
 static jmethodID intentGetActionMethod;
 static jmethodID intentGetTypeMethod;
 static jmethodID intentGetParcelableExtraMethod;
+static jmethodID intentGetStringExtraMethod;
 
 // https://developer.android.com/reference/android/net/Uri
 static jmethodID uriParseMethod;
@@ -68,6 +73,8 @@ void initJNI(uintptr_t javaVM, uintptr_t jniEnv, uintptr_t ctx)
     // intentGetParcelableExtraMethod =
     //     (*env)->GetMethodID(env, intentClass, "getParcelableExtra",
     // "(Ljava/lang/String;Ljava/lang/Class;)Ljava/lang/Object;");
+    intentGetStringExtraMethod = (*env)->GetMethodID(env, intentClass,
+        "getStringExtra", "(Ljava/lang/String;)Ljava/lang/String;");
 
     jclass uriClass = (*env)->FindClass(env, "android/net/Uri");
     uriParseMethod = (*env)->GetStaticMethodID(env, uriClass,
@@ -110,7 +117,7 @@ struct Intent getIntent(uintptr_t javaVM, uintptr_t jniEnv, uintptr_t ctx)
         out.type = jstringToC(env, type);
     }
 
-    // get parcelable
+    // get uri
 
     jstring EXTRA_STREAM = (*env)->NewStringUTF(env, "android.intent.extra.STREAM");
 
@@ -122,6 +129,17 @@ struct Intent getIntent(uintptr_t javaVM, uintptr_t jniEnv, uintptr_t ctx)
         if (uriString != NULL) {
             out.uri = jstringToC(env, uriString);
         }
+    }
+
+    // get text
+
+    jstring EXTRA_TEXT = (*env)->NewStringUTF(env, "android.intent.extra.TEXT");
+
+    jstring text = (*env)->CallObjectMethod(env, intent,
+        intentGetStringExtraMethod, EXTRA_TEXT);
+
+    if (text != NULL) {
+        out.text = jstringToC(env, text);
     }
 
     return out;

@@ -7,6 +7,7 @@ struct Intent {
     const char* action;
     const char* type;
     const char* uri;
+    const char* text;
 };
 
 void initJNI(uintptr_t javaVM, uintptr_t jniEnv, uintptr_t ctx);

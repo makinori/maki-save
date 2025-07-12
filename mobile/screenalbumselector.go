@@ -7,6 +7,7 @@ import (
 	"image/color"
 	"math"
 	"os"
+	"strings"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
@@ -43,32 +44,50 @@ func getImageBgColor() color.NRGBA {
 	}
 }
 
-func getImageBox(imageBytes []byte, name string) *fyne.Container {
+func getImageWidget(file immich.File) fyne.CanvasObject {
 	background := canvas.NewRectangle(getImageBgColor())
 
 	emptyImage := canvas.NewRectangle(color.NRGBA{})
-	emptyImage.SetMinSize(fyne.Size{Width: 0, Height: 150})
 	imageStack := container.NewStack(
 		background,
 		emptyImage,
 	)
 
 	go func() {
-		image := canvas.NewImageFromReader(bytes.NewReader(imageBytes), name)
+		image := canvas.NewImageFromReader(bytes.NewReader(file.Data), file.Name)
 		image.FillMode = canvas.ImageFillContain
-		image.SetMinSize(emptyImage.MinSize())
+		// image.SetMinSize(emptyImage.MinSize())
 		fyne.Do(func() {
 			imageStack.Objects[1] = image
 		})
 	}()
 
-	label := widget.NewLabel(fmt.Sprintf("%s (%s)",
-		currentName,
-		bytesToString(len(imageBytes)),
-	))
+	return imageStack
+}
+
+func getImagesGrid(files []immich.File) fyne.CanvasObject {
+	cols := int(math.Ceil(math.Sqrt(float64(len(files)))))
+	images := make([]fyne.CanvasObject, len(files))
+	for i, file := range files {
+		images[i] = getImageWidget(file)
+	}
+
+	imagesGrid := NewFixedSize(fyne.Size{Height: 150},
+		container.NewGridWithColumns(cols, images...),
+	)
+
+	text := ""
+	for _, file := range files {
+		text += fmt.Sprintf("%s (%s)\n",
+			file.Name, bytesToString(len(file.Data)),
+		)
+	}
+	text = strings.TrimSpace(text)
+
+	label := widget.NewLabel(text)
 
 	return container.NewBorder(
-		nil, container.NewCenter(label), nil, nil, imageStack,
+		nil, container.NewCenter(label), nil, nil, imagesGrid,
 	)
 }
 
@@ -78,12 +97,13 @@ func showError(err string) {
 	errorDialog.Show()
 }
 
-func showAlbumSelector() {
-	if currentIntent == nil || len(currentData) == 0 || currentName == "" {
+func showScreenAlbumSelector() {
+	if len(currentFiles) == 0 {
+		showScreenError("missing files", "can't display album selector")
 		return
 	}
 
-	imageBox := getImageBox(currentData, currentName)
+	imagesGrid := getImagesGrid(currentFiles)
 
 	albums, err := immich.GetAlbums()
 	if err != nil {
@@ -108,7 +128,7 @@ func showAlbumSelector() {
 
 	uploadingLabel := widget.NewLabel("Uploading...")
 
-	box := container.NewBorder(imageBox, nil, nil, nil, albumRadioList)
+	box := container.NewBorder(imagesGrid, nil, nil, nil, albumRadioList)
 
 	onSelect = func(i int) {
 		go func() {
@@ -116,9 +136,7 @@ func showAlbumSelector() {
 				box.Objects[0] = container.NewCenter(uploadingLabel)
 			})
 
-			info := immich.UploadFiles(albums[i], []immich.File{
-				immich.File{Data: currentData, Name: currentName},
-			})
+			info := immich.UploadFiles(albums[i], currentFiles)
 
 			fyne.Do(func() {
 				uploadingLabel.SetText("")
@@ -132,5 +150,7 @@ func showAlbumSelector() {
 		}()
 	}
 
-	window.SetContent(box)
+	fyne.Do(func() {
+		window.SetContent(box)
+	})
 }

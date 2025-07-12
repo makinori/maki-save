@@ -2,13 +2,19 @@ package main
 
 import (
 	_ "embed"
+	"errors"
+	"net/url"
 	"os"
 	"path"
+	"slices"
+	"strings"
 	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
+	"github.com/makinori/maki-immich/immich"
 	"github.com/makinori/maki-immich/mobile/android"
+	"github.com/makinori/maki-immich/mobile/scrape"
 )
 
 var (
@@ -16,9 +22,26 @@ var (
 	window  fyne.Window
 
 	currentIntent *android.Intent
-	currentData   []byte
-	currentName   string
+	currentFiles  []immich.File
 )
+
+func showUnknownIntent() {
+	showScreenError("unknown intent", strings.Join([]string{
+		"action: " + currentIntent.Action,
+		"type: " + currentIntent.Type,
+		"uri: " + currentIntent.URI,
+		"text: " + currentIntent.Text,
+	}, "\n"))
+}
+
+func showFetchingImages(from string) {
+	showScreenError(
+		"fetching images", "from "+from+"...",
+		ScreenTextOptionNoError,
+		ScreenTextOptionNoSelfDestruct,
+		ScreenTextOptionNoDismiss,
+	)
+}
 
 func loop() {
 	if currentIntent != nil {
@@ -26,31 +49,65 @@ func loop() {
 	}
 
 	intent := android.GetIntent()
-	if intent.Action != "android.intent.action.SEND" || intent.URI == "" {
-		return
-	}
-
-	data := android.ReadContent(intent.URI)
-	if len(data) == 0 {
+	if intent.Action != android.ACTION_SEND {
 		return
 	}
 
 	currentIntent = &intent
-	currentData = data
-	currentName = path.Base(intent.URI)
 
-	showAlbumSelector()
+	if intent.Type == "text/plain" {
+		url, err := url.Parse(intent.Text)
+		if err != nil {
+			showScreenError("failed to parse url", err.Error())
+			return
+		}
+
+		if slices.Contains(scrape.TwitterHosts, url.Host) {
+			showFetchingImages("twitter")
+
+			currentFiles, err = scrape.FromTwitter(url)
+			if err == nil && len(currentFiles) == 0 {
+				err = errors.New("no images")
+			}
+			if err != nil {
+				showScreenError("failed to retrieve", err.Error())
+				return
+			}
+
+			showScreenAlbumSelector()
+		} else {
+			showScreenError("unknown url", url.String())
+		}
+	} else if strings.HasPrefix(intent.Type, "image/") {
+		data := android.ReadContent(intent.URI)
+		if len(data) == 0 {
+			showUnknownIntent()
+			return
+		}
+
+		currentFiles = []immich.File{{
+			Name: path.Base(intent.URI), Data: data,
+		}}
+
+		showScreenAlbumSelector()
+	} else {
+		showUnknownIntent()
+	}
 }
 
 func main() {
 	fyneApp = app.New()
 	window = fyneApp.NewWindow("maki immich")
 
-	showDefaultScreen()
+	showScreenError(
+		"maki immich", "share an image to this app",
+		ScreenTextOptionNoError,
+		ScreenTextOptionNoSelfDestruct,
+	)
 
 	go func() {
 		for {
-			fyne.Do(loop)
+			loop()
 			if currentIntent != nil {
 				break
 			}
@@ -62,7 +119,7 @@ func main() {
 	// cause we're polling, don't want to poll for no reason
 	go func() {
 		time.Sleep(time.Second * 10)
-		if currentIntent == nil {
+		if currentIntent == nil && len(currentFiles) == 0 {
 			os.Exit(0)
 		}
 	}()
