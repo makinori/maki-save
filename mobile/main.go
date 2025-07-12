@@ -95,7 +95,7 @@ func loop() {
 			return true
 		}
 
-		if tryScrape("twitter", scrape.TwitterHosts, scrape.Twitter) {
+		if tryScrape("twitter", scrape.TwitterHosts, scrape.VXTwitter) {
 			return
 		}
 

@@ -1,6 +1,7 @@
 package scrape
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -19,14 +20,13 @@ var (
 		"twitter.com",
 		"x.com",
 		"nitter.net",
+		"vxtwitter.com",
 	}
 
 	twitterPathRegexp = regexp.MustCompile(`(?i)\/(.+?)\/status\/([0-9]+)`)
 )
 
-func Twitter(url *url.URL) ([]immich.File, error) {
-	// https://nitter.net/14_B4L/status/1944010573924250078
-
+func Nitter(url *url.URL) ([]immich.File, error) {
 	twitterPathMatches := twitterPathRegexp.FindStringSubmatch(url.Path)
 	if len(twitterPathMatches) == 0 {
 		return []immich.File{}, errors.New("failed to match username and id from url")
@@ -93,6 +93,105 @@ func Twitter(url *url.URL) ([]immich.File, error) {
 
 			var err error
 			res, err := http.Get(imageUrl)
+			if err != nil {
+				files[i].Err = err
+				return
+			}
+			defer res.Body.Close()
+
+			files[i].Data, err = io.ReadAll(res.Body)
+			if err != nil {
+				files[i].Err = err
+				return
+			}
+		}()
+	}
+	wg.Wait()
+
+	errText := ""
+	for _, file := range files {
+		if file.Err != nil {
+			errText += file.Err.Error() + "\n"
+		}
+	}
+
+	if errText != "" {
+		return []immich.File{}, errors.New(errText)
+	}
+
+	return files, nil
+}
+
+type VXTwitterRes struct {
+	// conversationID: string;
+	// date: string;
+	// date_epoch: number;
+	// hashtags: string[];
+	// likes: number;
+	// mediaURLs: string[];
+	Media []struct {
+		// altText: string;
+		// duration_millis: number;
+		// size: { width: number; height: number };
+		// thumbnail_url: string;
+		// type: "video" | "image" | "gif";
+		URL string `json:"url"`
+	} `json:"media_extended"`
+	// possibly_sensitive: boolean;
+	// qrtURL: null;
+	// replies: number;
+	// retweets: number;
+	// text: string;
+	ID string `json:"tweetID"`
+	// tweetURL: string;
+	DisplayName string `json:"user_name"`
+	// user_profile_image_url: string;
+	Username string `json:"user_screen_name"`
+}
+
+func VXTwitter(url *url.URL) ([]immich.File, error) {
+	twitterPathMatches := twitterPathRegexp.FindStringSubmatch(url.Path)
+	if len(twitterPathMatches) == 0 {
+		return []immich.File{}, errors.New("failed to match username and id from url")
+	}
+
+	res, err := http.Get("https://api.vxtwitter.com" + url.Path)
+	if err != nil {
+		return []immich.File{}, err
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != 200 {
+		return []immich.File{}, fmt.Errorf("%d: %s", res.StatusCode, res.Status)
+	}
+
+	data, err := io.ReadAll(res.Body)
+	if err != nil {
+		return []immich.File{}, err
+	}
+
+	vxTwitterRes := VXTwitterRes{}
+	err = json.Unmarshal(data, &vxTwitterRes)
+	if err != nil {
+		return []immich.File{}, err
+	}
+
+	filenamePrefix := vxTwitterRes.Username + "-" + vxTwitterRes.ID
+
+	files := make([]immich.File, len(vxTwitterRes.Media))
+
+	wg := sync.WaitGroup{}
+	for i, media := range vxTwitterRes.Media {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+
+			files[i].Name = fmt.Sprintf("%s-%02d%s",
+				filenamePrefix, i+1, path.Ext(media.URL),
+			)
+
+			var err error
+			res, err := http.Get(media.URL)
 			if err != nil {
 				files[i].Err = err
 				return
