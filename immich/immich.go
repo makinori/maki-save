@@ -356,14 +356,14 @@ func UploadFiles(album Album, files []File) string {
 		}
 	}
 
-	finalMsg := fmt.Sprintf("Added %d to: %s", len(completed), album.AlbumName)
+	finalMsg := fmt.Sprintf("added %d to: %s", len(completed), album.AlbumName)
 
 	if len(completed) > 0 {
 		finalMsg += "\n" + strings.Join(completed, "\n")
 	}
 
 	if len(failed) > 0 {
-		finalMsg += "\n\nFailed:\n" + strings.Join(failed, "\n")
+		finalMsg += "\n\nfailed:\n" + strings.Join(failed, "\n")
 	}
 
 	return finalMsg

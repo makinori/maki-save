@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"image/color"
 	"math"
@@ -12,7 +11,6 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
-	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/makinori/maki-immich/immich"
@@ -97,12 +95,6 @@ func getImagesGrid(files []immich.File) fyne.CanvasObject {
 	)
 }
 
-func showError(err string) {
-	errorDialog := dialog.NewError(errors.New(err), window)
-	errorDialog.SetOnClosed(func() { os.Exit(1) })
-	errorDialog.Show()
-}
-
 func showScreenAlbumSelector() {
 	if len(currentFiles) == 0 {
 		showScreenError("missing files", "can't display album selector")
@@ -113,7 +105,7 @@ func showScreenAlbumSelector() {
 
 	albums, err := immich.GetAlbums()
 	if err != nil {
-		showError("failed to get albums: " + err.Error())
+		showScreenError("failed to get albums", err.Error())
 		return
 	}
 
@@ -132,7 +124,7 @@ func showScreenAlbumSelector() {
 		},
 	)
 
-	uploadingLabel := widget.NewLabel("Uploading...")
+	uploadingLabel := widget.NewLabel("uploading...")
 
 	box := container.NewBorder(imagesGrid, nil, nil, nil, albumRadioList)
 
