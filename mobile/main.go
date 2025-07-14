@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"runtime"
 	"slices"
 	"strings"
 	"time"
@@ -133,6 +134,13 @@ func main() {
 	fyneApp.Settings().SetTheme(&makitheme.Theme{})
 
 	window = fyneApp.NewWindow("maki immich")
+
+	if runtime.GOOS == "linux" {
+		window.Resize(fyne.Size{
+			Width:  300,
+			Height: 500,
+		})
+	}
 
 	showScreenError(
 		"maki immich", "share an image to this app",

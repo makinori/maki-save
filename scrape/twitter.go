@@ -11,7 +11,6 @@ import (
 	"regexp"
 	"sync"
 
-	"github.com/PuerkitoBio/goquery"
 	"github.com/makinori/maki-immich/immich"
 )
 
@@ -26,6 +25,7 @@ var (
 	twitterPathRegexp = regexp.MustCompile(`(?i)\/(.+?)\/status\/([0-9]+)`)
 )
 
+/*
 func Nitter(url *url.URL) ([]immich.File, error) {
 	twitterPathMatches := twitterPathRegexp.FindStringSubmatch(url.Path)
 	if len(twitterPathMatches) == 0 {
@@ -121,6 +121,7 @@ func Nitter(url *url.URL) ([]immich.File, error) {
 
 	return files, nil
 }
+*/
 
 type VXTwitterMediaType string
 
@@ -130,31 +131,20 @@ const (
 	VXTwitterMediaTypeGif   VXTwitterMediaType = "gif"
 )
 
+type VXTwitterMedia struct {
+	ThumbnailURL string             `json:"thumbnail_url"`
+	Type         VXTwitterMediaType `json:"type"`
+	URL          string             `json:"url"`
+}
+
 type VXTwitterRes struct {
-	// conversationID: string;
-	// date: string;
-	// date_epoch: number;
-	// hashtags: string[];
-	// likes: number;
-	// mediaURLs: string[];
-	Media []struct {
-		// altText: string;
-		// duration_millis: number;
-		// size: { width: number; height: number };
-		ThumbnailURL string             `json:"thumbnail_url"`
-		Type         VXTwitterMediaType `json:"type"`
-		URL          string             `json:"url"`
-	} `json:"media_extended"`
-	// possibly_sensitive: boolean;
-	// qrtURL: null;
-	// replies: number;
-	// retweets: number;
-	// text: string;
-	ID string `json:"tweetID"`
-	// tweetURL: string;
+	Media        []VXTwitterMedia `json:"media_extended"`
+	QuoteRetweet struct {
+		Media []VXTwitterMedia `json:"media_extended"`
+	} `json:"qrt"`
+	ID          string `json:"tweetID"`
 	DisplayName string `json:"user_name"`
-	// user_profile_image_url: string;
-	Username string `json:"user_screen_name"`
+	Username    string `json:"user_screen_name"`
 }
 
 func VXTwitter(url *url.URL) ([]immich.File, error) {
@@ -184,12 +174,17 @@ func VXTwitter(url *url.URL) ([]immich.File, error) {
 		return []immich.File{}, err
 	}
 
+	foundMedia := append(
+		vxTwitterRes.Media,
+		vxTwitterRes.QuoteRetweet.Media...,
+	)
+
 	filenamePrefix := vxTwitterRes.Username + "-" + vxTwitterRes.ID
 
-	files := make([]immich.File, len(vxTwitterRes.Media))
+	files := make([]immich.File, len(foundMedia))
 
 	wg := sync.WaitGroup{}
-	for i, media := range vxTwitterRes.Media {
+	for i, media := range foundMedia {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
