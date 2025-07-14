@@ -44,10 +44,18 @@ func radioList(options []string, onSelect *func(int), onCancel func()) *fyne.Con
 	list := widget.NewList(
 		func() int { return len(options) },
 		func() fyne.CanvasObject {
-			return widget.NewLabel("")
+			// return widget.NewLabel("")
+			return widget.NewRichText(&widget.TextSegment{
+				Text: "",
+				Style: widget.RichTextStyle{
+					SizeName: theme.SizeNameSubHeadingText,
+				},
+			})
 		},
 		func(i widget.ListItemID, o fyne.CanvasObject) {
-			o.(*widget.Label).SetText(options[i])
+			// o.(*widget.Label).SetText(options[i])
+			seg := o.(*widget.RichText).Segments[0]
+			seg.(*widget.TextSegment).Text = options[i]
 		},
 	)
 
