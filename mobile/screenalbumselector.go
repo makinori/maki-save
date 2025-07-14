@@ -7,6 +7,7 @@ import (
 	"io"
 	"math"
 	"os"
+	"slices"
 	"strings"
 
 	"fyne.io/fyne/v2"
@@ -30,6 +31,7 @@ func bytesToString(bytes int) string {
 	return fmt.Sprintf("%.1f MB", s)
 }
 
+/*
 func getImageBgColor() color.NRGBA {
 	r, g, b, a := fyne.CurrentApp().Settings().Theme().Color(
 		theme.ColorNameDisabledButton, fyne.CurrentApp().Settings().ThemeVariant(),
@@ -42,26 +44,43 @@ func getImageBgColor() color.NRGBA {
 		A: uint8((float32(a) / math.MaxUint16) * alpha * 255),
 	}
 }
+*/
 
-func getImageWidget(file immich.File) fyne.CanvasObject {
-	background := canvas.NewRectangle(getImageBgColor())
+var cachedFileCanvasImageMap = map[*immich.File]*canvas.Image{}
+
+func getImageWidget(file *immich.File, onClick func()) fyne.CanvasObject {
+	// background := canvas.NewRectangle(getImageBgColor())
+	button := widget.NewButton("", onClick)
 
 	emptyImage := canvas.NewRectangle(color.NRGBA{})
 	imageStack := container.NewStack(
-		background,
+		// background,
+		button,
 		emptyImage,
 	)
 
-	go func() {
-		var reader io.Reader
-		if len(file.Thumbnail) > 0 {
-			reader = bytes.NewReader(file.Thumbnail)
-		} else {
-			reader = bytes.NewReader(file.Data)
-		}
+	if len(file.Thumbnail) > 0 {
+		icon := widget.NewIcon(theme.MediaVideoIcon())
+		imageStack.Add(container.NewCenter(NewMinSize(
+			fyne.Size{Width: 36, Height: 36},
+			icon,
+		)))
+	}
 
-		image := canvas.NewImageFromReader(reader, file.Name)
-		image.FillMode = canvas.ImageFillContain
+	go func() {
+		image, ok := cachedFileCanvasImageMap[file]
+		if !ok {
+			var reader io.Reader
+			if len(file.Thumbnail) > 0 {
+				reader = bytes.NewReader(file.Thumbnail)
+			} else {
+				reader = bytes.NewReader(file.Data)
+			}
+
+			image = canvas.NewImageFromReader(reader, file.Name)
+			image.FillMode = canvas.ImageFillContain
+			cachedFileCanvasImageMap[file] = image
+		}
 		fyne.Do(func() {
 			imageStack.Objects[1] = image
 		})
@@ -70,14 +89,16 @@ func getImageWidget(file immich.File) fyne.CanvasObject {
 	return imageStack
 }
 
-func getImagesGrid(files []immich.File) fyne.CanvasObject {
+func getImagesGrid(files []*immich.File, onClick func(*immich.File)) fyne.CanvasObject {
 	cols := int(math.Ceil(math.Sqrt(float64(len(files)))))
 	images := make([]fyne.CanvasObject, len(files))
 	for i, file := range files {
-		images[i] = getImageWidget(file)
+		images[i] = getImageWidget(file, func() {
+			onClick(file)
+		})
 	}
 
-	imagesGrid := NewFixedSize(fyne.Size{Height: 150},
+	imagesGrid := NewMinSize(fyne.Size{Height: 250},
 		container.NewGridWithColumns(cols, images...),
 	)
 
@@ -102,18 +123,30 @@ func getImagesGrid(files []immich.File) fyne.CanvasObject {
 	)
 }
 
+var albums []immich.Album
+
 func showScreenAlbumSelector() {
 	if len(currentFiles) == 0 {
 		showScreenError("missing files", "can't display album selector")
 		return
 	}
 
-	imagesGrid := getImagesGrid(currentFiles)
+	imagesGrid := getImagesGrid(currentFiles, func(f *immich.File) {
+		i := slices.Index(currentFiles, f)
+		if i == -1 {
+			return
+		}
+		currentFiles = slices.Delete(currentFiles, i, i+1)
+		showScreenAlbumSelector()
+	})
 
-	albums, err := immich.GetAlbums()
-	if err != nil {
-		showScreenError("failed to get albums", err.Error())
-		return
+	if len(albums) == 0 {
+		var err error
+		albums, err = immich.GetAlbums()
+		if err != nil {
+			showScreenError("failed to get albums", err.Error())
+			return
+		}
 	}
 
 	albumNames := make([]string, len(albums))

@@ -25,7 +25,7 @@ var (
 	window  fyne.Window
 
 	currentIntent *android.Intent
-	currentFiles  []immich.File
+	currentFiles  []*immich.File
 )
 
 func showUnknownIntent() {
@@ -82,13 +82,18 @@ func loop() {
 
 			showFetchingImages(name)
 
-			currentFiles, err = scrapeFn(intentURL)
-			if err == nil && len(currentFiles) == 0 {
+			files, err := scrapeFn(intentURL)
+			if err == nil && len(files) == 0 {
 				err = errors.New("no images")
 			}
 			if err != nil {
 				showScreenError("failed to retrieve", err.Error())
 				return true
+			}
+
+			currentFiles = make([]*immich.File, len(files))
+			for i, file := range files {
+				currentFiles[i] = &file
 			}
 
 			showScreenAlbumSelector()
@@ -106,7 +111,7 @@ func loop() {
 
 		showFetchingImages("content://")
 
-		currentFiles = make([]immich.File, len(intent.URI))
+		currentFiles = make([]*immich.File, len(intent.URI))
 
 		for i, uri := range intent.URI {
 			data := android.ReadContent(uri)
@@ -118,7 +123,7 @@ func loop() {
 				return
 			}
 
-			currentFiles[i] = immich.File{
+			currentFiles[i] = &immich.File{
 				Name: path.Base(uri), Data: data,
 			}
 		}
@@ -137,8 +142,8 @@ func main() {
 
 	if runtime.GOOS == "linux" {
 		window.Resize(fyne.Size{
-			Width:  300,
-			Height: 500,
+			Width:  400,
+			Height: 700,
 		})
 	}
 

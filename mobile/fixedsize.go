@@ -5,11 +5,11 @@ import (
 	"fyne.io/fyne/v2/container"
 )
 
-type fixedSize struct {
+type minSize struct {
 	size fyne.Size
 }
 
-func (f *fixedSize) MinSize(objects []fyne.CanvasObject) fyne.Size {
+func (f *minSize) MinSize(objects []fyne.CanvasObject) fyne.Size {
 	minSize := objects[0].MinSize()
 	if f.size.Width > 0 {
 		minSize.Width = f.size.Width
@@ -20,13 +20,39 @@ func (f *fixedSize) MinSize(objects []fyne.CanvasObject) fyne.Size {
 	return minSize
 }
 
-func (f *fixedSize) Layout(objects []fyne.CanvasObject, containerSize fyne.Size) {
+func (f *minSize) Layout(objects []fyne.CanvasObject, containerSize fyne.Size) {
 	objects[0].Resize(containerSize)
 }
 
-func NewFixedSize(size fyne.Size, object fyne.CanvasObject) *fyne.Container {
-	return container.New(&fixedSize{
+func NewMinSize(size fyne.Size, object fyne.CanvasObject) *fyne.Container {
+	return container.New(&minSize{
 		size: size,
-		// layout: layout.New(),
 	}, object)
 }
+
+/*
+type maxSize struct {
+	size fyne.Size
+}
+
+func (f *maxSize) MinSize(objects []fyne.CanvasObject) fyne.Size {
+	return objects[0].MinSize()
+}
+
+func (f *maxSize) Layout(objects []fyne.CanvasObject, containerSize fyne.Size) {
+	size := objects[0].MinSize()
+	if f.size.Width > 0 {
+		size.Width = f.size.Width
+	}
+	if f.size.Height > 0 {
+		size.Height = f.size.Height
+	}
+	objects[0].Resize(size)
+}
+
+func NewMaxSize(size fyne.Size, object fyne.CanvasObject) *fyne.Container {
+	return container.New(&maxSize{
+		size: size,
+	}, object)
+}
+*/

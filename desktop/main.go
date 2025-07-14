@@ -93,11 +93,11 @@ func main() {
 
 	// upload files
 
-	files := make([]immich.File, len(filePaths))
+	files := make([]*immich.File, len(filePaths))
 
 	for i, filePath := range filePaths {
 		data, err := os.ReadFile(filePath)
-		files[i] = immich.File{
+		files[i] = &immich.File{
 			Data: data,
 			Name: path.Base(filePath),
 			Err:  err,

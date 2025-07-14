@@ -4,7 +4,6 @@ go 1.24.4
 
 require (
 	fyne.io/fyne/v2 v2.6.1
-	github.com/PuerkitoBio/goquery v1.10.3
 	golang.org/x/sync v0.13.0
 )
 
@@ -15,7 +14,6 @@ require (
 	fyne.io/tools v1.6.1 // indirect
 	github.com/BurntSushi/toml v1.4.0 // indirect
 	github.com/akavel/rsrc v0.10.2 // indirect
-	github.com/andybalholm/cascadia v1.3.3 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fogleman/gg v1.3.0 // indirect

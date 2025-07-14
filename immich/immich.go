@@ -377,7 +377,7 @@ func UploadFile(album Album, file *File, date time.Time) error {
 	return nil
 }
 
-func UploadFiles(album Album, files []File) string {
+func UploadFiles(album Album, files []*File) string {
 	// upload files
 
 	now := time.Now()
@@ -400,7 +400,7 @@ func UploadFiles(album Album, files []File) string {
 				err = file.Err
 			} else {
 				time := now.Add(time.Millisecond * time.Duration(i*10))
-				err = UploadFile(album, &file, time)
+				err = UploadFile(album, file, time)
 			}
 
 			mutex.Lock()
