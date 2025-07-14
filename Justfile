@@ -31,6 +31,10 @@ install:
 
 
 [group("android")]
+test-apk:
+	go run ./mobile 
+
+[group("android")]
 [working-directory("mobile")]
 build-apk:
 	go tool fyne package -os android -app-id cafe.maki.immich \

@@ -3,6 +3,7 @@ package makitheme
 import (
 	_ "embed"
 	"image/color"
+	"sync"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/theme"
@@ -26,17 +27,28 @@ var (
 	//go:embed MakiLibertinusMono-BoldItalic.ttf
 	fontBoldItalicData []byte
 	fontBoldItalic     = fyne.NewStaticResource("MakiLibertinusMono-BoldItalic.ttf", fontBoldItalicData)
+
+	//go:embed NotoColorEmoji.ttf
+	fontNotoColorEmojiData []byte
 )
 
 func (t *Theme) Color(name fyne.ThemeColorName, variant fyne.ThemeVariant) color.Color {
 	return theme.DefaultTheme().Color(name, variant)
 }
 
+var updateEmojiFontOnce sync.Once
+
 func (t *Theme) Font(style fyne.TextStyle) fyne.Resource {
-	// our font is monospace
-	// if style.Monospace {
-	// 	return theme.DefaultTextMonospaceFont()
-	// }
+	updateEmojiFontOnce.Do(func() {
+		// default emoji font is old and outdated. replace with custom font.
+		// unfortunately can't use `-tags no_emoji`` or below will return nil.
+		font, ok := theme.DefaultEmojiFont().(*fyne.StaticResource)
+		if ok {
+			font.StaticName = "NotoColorEmoji.ttf"
+			font.StaticContent = fontNotoColorEmojiData
+		}
+	})
+
 	if style.Bold {
 		if style.Italic {
 			return fontBoldItalic
