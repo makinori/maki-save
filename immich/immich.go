@@ -12,6 +12,7 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"path"
 	"slices"
 	"strings"
 	"sync"
@@ -299,7 +300,45 @@ type File struct {
 	Thumbnail []byte // for rendering ui
 }
 
-func UploadFile(album Album, file File, date time.Time) error {
+var mediaContentTypeFileExts = map[string][]string{
+	"image/x-icon":    {".ico"},
+	"image/bmp":       {".bmp"},
+	"image/gif":       {".gif"},
+	"image/webp":      {".webp"},
+	"image/png":       {".png"},
+	"image/jpeg":      {".jpg", ".jpeg"},
+	"audio/aiff":      {".aiff"},
+	"audio/mpeg":      {".mp3"},
+	"application/ogg": {".ogg"},
+	"audio/midi":      {".mid"},
+	"video/avi":       {".avi"},
+	"audio/wave":      {".wav"},
+	"video/mp4":       {".mp4"},
+	"video/webm":      {".webm"},
+}
+
+func fixFileName(file *File) {
+	contentType := http.DetectContentType(file.Data)
+
+	fileExts, ok := mediaContentTypeFileExts[contentType]
+	if !ok {
+		return
+	}
+
+	ext := strings.ToLower(path.Ext(file.Name))
+	if slices.Contains(fileExts, ext) {
+		return
+	}
+
+	// sometimes longer than .abcd, probably not a file ext then
+	if len(ext) > 5 {
+		file.Name = file.Name + fileExts[0]
+	} else {
+		file.Name = file.Name[0:len(file.Name)-len(ext)] + fileExts[0]
+	}
+}
+
+func UploadFile(album Album, file *File, date time.Time) error {
 	// try to strip exif
 	// ignore error
 	// {
@@ -308,6 +347,8 @@ func UploadFile(album Album, file File, date time.Time) error {
 	// 		fileData = strippedData
 	// 	}
 	// }
+
+	fixFileName(file)
 
 	fileDateStr := date.Format(time.RFC3339Nano)
 
@@ -359,7 +400,7 @@ func UploadFiles(album Album, files []File) string {
 				err = file.Err
 			} else {
 				time := now.Add(time.Millisecond * time.Duration(i*10))
-				err = UploadFile(album, file, time)
+				err = UploadFile(album, &file, time)
 			}
 
 			mutex.Lock()
@@ -371,6 +412,7 @@ func UploadFiles(album Album, files []File) string {
 			default:
 				// some other error
 				failed[i] = file.Name
+				fmt.Println(err)
 			}
 			mutex.Unlock()
 		}(i)
