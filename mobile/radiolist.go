@@ -41,8 +41,10 @@ func radioList(options []string, onSelect *func(int), onCancel func()) *fyne.Con
 
 	selectButton.Disable()
 
-	list := widget.NewList(
-		func() int { return len(options) },
+	listScroll := widget.NewList(
+		func() int {
+			return len(options)
+		},
 		func() fyne.CanvasObject {
 			// return widget.NewLabel("")
 			return widget.NewRichText(&widget.TextSegment{
@@ -52,19 +54,19 @@ func radioList(options []string, onSelect *func(int), onCancel func()) *fyne.Con
 				},
 			})
 		},
-		func(i widget.ListItemID, o fyne.CanvasObject) {
-			// o.(*widget.Label).SetText(options[i])
-			seg := o.(*widget.RichText).Segments[0]
-			seg.(*widget.TextSegment).Text = options[i]
+		func(i widget.ListItemID, obj fyne.CanvasObject) {
+			// obj.(*widget.Label).SetText(options[i])
+			text := obj.(*widget.RichText)
+			segment := text.Segments[0].(*widget.TextSegment)
+			segment.Text = options[i]
+			text.Refresh()
 		},
 	)
 
-	list.OnSelected = func(i widget.ListItemID) {
+	listScroll.OnSelected = func(i widget.ListItemID) {
 		selected = i
 		selectButton.Enable()
 	}
-
-	listScroll := container.NewVScroll(list)
 
 	// label := container.NewCenter(
 	// 	widget.NewLabel("Select an album to upload to"),
