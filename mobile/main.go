@@ -41,15 +41,15 @@ func showUnknownIntent() {
 		}
 	}
 	lines = append(lines, "text: "+currentIntent.Text)
-	showScreenError("unknown intent", strings.Join(lines, "\n"))
+	showScreenError(ScreenError{Text: []string{
+		"unknown intent", strings.Join(lines, "\n"),
+	}})
 }
 
 func showFetchingImages(from string) {
-	showScreenError(
-		"fetching", "from "+from+"...",
-		ScreenTextOptionNoError,
-		ScreenTextOptionNoDismiss,
-	)
+	showScreenError(ScreenError{Text: []string{
+		"#fetching", "from " + from + "...",
+	}, NoDismiss: true, NoSelfDestruct: true})
 }
 
 func loop() {
@@ -68,7 +68,9 @@ func loop() {
 	if intent.Type == "text/plain" {
 		intentURL, err := url.Parse(intent.Text)
 		if err != nil {
-			showScreenError("failed to parse url", err.Error())
+			showScreenError(ScreenError{Text: []string{
+				"failed to parse url", err.Error(),
+			}})
 			return
 		}
 
@@ -87,7 +89,9 @@ func loop() {
 				err = errors.New("no images")
 			}
 			if err != nil {
-				showScreenError("failed to retrieve", err.Error())
+				showScreenError(ScreenError{Text: []string{
+					"failed to retrieve", err.Error(),
+				}})
 				return true
 			}
 
@@ -104,7 +108,9 @@ func loop() {
 			return
 		}
 
-		showScreenError("unknown url", intentURL.String())
+		showScreenError(ScreenError{Text: []string{
+			"unknown url", intentURL.String(),
+		}})
 
 	} else if strings.HasPrefix(intent.Type, "image/") ||
 		strings.HasPrefix(intent.Type, "video/") {
@@ -116,10 +122,9 @@ func loop() {
 		for i, uri := range intent.URI {
 			data := android.ReadContent(uri)
 			if len(data) == 0 {
-				showScreenError(
-					"failed to read content",
-					"returned 0 for uri:\n"+uri,
-				)
+				showScreenError(ScreenError{Text: []string{
+					"failed to read content", "returned 0 for uri:\n" + uri,
+				}})
 				return
 			}
 
@@ -147,10 +152,13 @@ func main() {
 		})
 	}
 
-	showScreenError(
-		"maki immich", "share an image to this app",
-		ScreenTextOptionNoError,
-	)
+	showScreenError(ScreenError{
+		Text: []string{
+			"#maki immich", "share an image to this app",
+		},
+		// will conditionally self destruct below
+		NoSelfDestruct: true,
+	})
 
 	go func() {
 		for {

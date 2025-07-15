@@ -377,7 +377,7 @@ func UploadFile(album Album, file *File, date time.Time) error {
 	return nil
 }
 
-func UploadFiles(album Album, files []*File) string {
+func UploadFiles(album Album, files []*File) []string {
 	// upload files
 
 	now := time.Now()
@@ -420,15 +420,22 @@ func UploadFiles(album Album, files []*File) string {
 
 	sem.Acquire(ctx, maxWorkers)
 
-	finalMsg := fmt.Sprintf("added %d to: %s\n", len(completed), album.AlbumName)
+	var messages []string
 
+	messages = append(messages,
+		fmt.Sprintf("added %d to: %s", len(completed), album.AlbumName),
+	)
+
+	var addedMsg string
 	for _, msg := range completed {
 		if msg != "" {
-			finalMsg += msg + "\n"
+			addedMsg += msg + "\n"
 		}
 	}
+	addedMsg = strings.TrimSpace(addedMsg)
+	messages = append(messages, addedMsg)
 
-	failedMsg := ""
+	var failedMsg string
 	for _, msg := range failed {
 		if msg != "" {
 			failedMsg += msg + "\n"
@@ -437,8 +444,8 @@ func UploadFiles(album Album, files []*File) string {
 	failedMsg = strings.TrimSpace(failedMsg)
 
 	if failedMsg != "" {
-		finalMsg += "\nfailed:\n" + failedMsg
+		messages = append(messages, "failed:", failedMsg)
 	}
 
-	return finalMsg
+	return messages
 }

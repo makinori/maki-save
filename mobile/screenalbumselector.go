@@ -127,7 +127,9 @@ var albums []immich.Album
 
 func showScreenAlbumSelector() {
 	if len(currentFiles) == 0 {
-		showScreenError("missing files", "can't display album selector")
+		showScreenError(ScreenError{Text: []string{
+			"missing files", "can't display album selector",
+		}})
 		return
 	}
 
@@ -144,7 +146,9 @@ func showScreenAlbumSelector() {
 		var err error
 		albums, err = immich.GetAlbums()
 		if err != nil {
-			showScreenError("failed to get albums", err.Error())
+			showScreenError(ScreenError{Text: []string{
+				"failed to get albums", err.Error(),
+			}})
 			return
 		}
 	}
@@ -174,7 +178,7 @@ func showScreenAlbumSelector() {
 				box.Objects[0] = container.NewCenter(uploadingLabel)
 			})
 
-			info := immich.UploadFiles(albums[i], currentFiles)
+			messages := immich.UploadFiles(albums[i], currentFiles)
 
 			fyne.Do(func() {
 				uploadingLabel.SetText("")
@@ -185,9 +189,11 @@ func showScreenAlbumSelector() {
 				// })
 				// infoDialog.Show()
 
-				showScreenError("", info,
-					ScreenTextOptionNoError,
-				)
+				messages[0] = "#" + messages[0]
+				showScreenError(ScreenError{
+					Text: messages,
+					// we want it to self destruct
+				})
 			})
 		}()
 	}

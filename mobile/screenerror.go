@@ -2,7 +2,7 @@ package main
 
 import (
 	"os"
-	"slices"
+	"strings"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -12,6 +12,14 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
+type ScreenError struct {
+	// title,text pairs.
+	// prefix title with # for no error.
+	Text           []string
+	NoDismiss      bool
+	NoSelfDestruct bool
+}
+
 type ScreenTextOption uint8
 
 const (
@@ -19,14 +27,9 @@ const (
 	ScreenTextOptionNoDismiss
 )
 
-func showScreenError(
-	title string, text string, options ...ScreenTextOption,
-) {
-	var titleColorName fyne.ThemeColorName = theme.ColorNameError
+func showScreenError(in ScreenError) {
 
-	if slices.Contains(options, ScreenTextOptionNoError) {
-		titleColorName = ""
-	} else {
+	if !in.NoSelfDestruct {
 		// errors self destruct
 		go func() {
 			time.Sleep(time.Second * 10)
@@ -34,46 +37,69 @@ func showScreenError(
 		}()
 	}
 
-	var content = []fyne.CanvasObject{
-		layout.NewSpacer(),
-	}
+	var segments []widget.RichTextSegment
 
-	if title != "" {
-		content = append(content, widget.NewRichText(
-			&widget.TextSegment{
-				Text: title,
+	for i, str := range in.Text {
+		if str == "" {
+			continue
+		}
+
+		if i%2 == 0 {
+			// title
+			newStr := strings.TrimPrefix(str, "#")
+			var titleColorName fyne.ThemeColorName = theme.ColorNameError
+			if str != newStr {
+				titleColorName = ""
+			}
+			segments = append(segments, &widget.TextSegment{
+				Text: strings.TrimSpace(newStr),
 				Style: widget.RichTextStyle{
 					Alignment: fyne.TextAlignCenter,
 					SizeName:  theme.SizeNameSubHeadingText,
 					ColorName: titleColorName,
-					TextStyle: fyne.TextStyle{
-						Bold: true,
-					},
+					TextStyle: fyne.TextStyle{Bold: true},
 				},
+			})
+		} else {
+			// text
+			segments = append(segments, &widget.TextSegment{
+				Text: strings.TrimSpace(str),
+				Style: widget.RichTextStyle{
+					Alignment: fyne.TextAlignCenter,
+				},
+			})
+		}
+
+		// spacer
+		if i < len(in.Text)-1 {
+			segments = append(segments, &widget.TextSegment{
+				Style: widget.RichTextStyle{
+					SizeName: theme.SizeNamePadding,
+				},
+			})
+		}
+	}
+
+	if !in.NoDismiss {
+		// smaller spacer
+		segments = append(segments, &widget.TextSegment{
+			Style: widget.RichTextStyle{
+				SizeName: theme.SizeNameSeparatorThickness,
 			},
-		))
+		})
 	}
 
-	textLabel := widget.NewLabel(text)
-	textLabel.Truncation = fyne.TextTruncateEllipsis
-	textLabel.Alignment = fyne.TextAlignCenter
-
-	dismissButton := widget.NewButton("dismiss", func() {
-		os.Exit(0)
-	})
-
-	paddedContent := []fyne.CanvasObject{
-		textLabel,
+	var content = []fyne.CanvasObject{
+		layout.NewSpacer(),
+		widget.NewRichText(segments...),
 	}
 
-	if !slices.Contains(options, ScreenTextOptionNoDismiss) {
-		paddedContent = append(paddedContent, container.NewCenter(dismissButton))
+	if !in.NoDismiss {
+		dismissButton := widget.NewButton("dismiss", func() { os.Exit(0) })
+		content = append(content, container.NewCenter(dismissButton))
 	}
 
 	content = append(content,
-		container.New(layout.NewCustomPaddedVBoxLayout(16),
-			paddedContent...,
-		),
 		layout.NewSpacer(),
 	)
 

@@ -104,5 +104,18 @@ func main() {
 		}
 	}
 
-	dialog(immich.UploadFiles(album, files), false)
+	// display
+
+	messages := immich.UploadFiles(album, files)
+
+	var outputMsg string
+	for i, msg := range messages {
+		outputMsg += msg + "\n"
+		if i%2 == 1 {
+			outputMsg += "\n"
+		}
+	}
+	outputMsg = strings.TrimSpace(outputMsg)
+
+	dialog(outputMsg, false)
 }
