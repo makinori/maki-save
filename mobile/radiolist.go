@@ -29,8 +29,8 @@ func radioList(options []string, onSelect *func(int), onCancel func()) *fyne.Con
 		},
 	)
 
-	okButton := widget.NewButtonWithIcon(
-		"Ok", theme.ConfirmIcon(),
+	selectButton := widget.NewButtonWithIcon(
+		"Select", theme.ConfirmIcon(),
 		func() {
 			if onSelect != nil {
 				(*onSelect)(selected)
@@ -39,7 +39,7 @@ func radioList(options []string, onSelect *func(int), onCancel func()) *fyne.Con
 		},
 	)
 
-	okButton.Disable()
+	selectButton.Disable()
 
 	list := widget.NewList(
 		func() int { return len(options) },
@@ -61,7 +61,7 @@ func radioList(options []string, onSelect *func(int), onCancel func()) *fyne.Con
 
 	list.OnSelected = func(i widget.ListItemID) {
 		selected = i
-		okButton.Enable()
+		selectButton.Enable()
 	}
 
 	listScroll := container.NewVScroll(list)
@@ -70,10 +70,7 @@ func radioList(options []string, onSelect *func(int), onCancel func()) *fyne.Con
 	// 	widget.NewLabel("Select an album to upload to"),
 	// )
 
-	buttons := container.NewBorder(nil, nil, nil, container.NewHBox(
-		cancelButton,
-		okButton,
-	))
+	buttons := container.NewBorder(nil, nil, cancelButton, nil, selectButton)
 
 	box := container.NewBorder(
 		// label,
