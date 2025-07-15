@@ -193,8 +193,10 @@ func VXTwitter(url *url.URL) ([]immich.File, error) {
 				filenamePrefix, i+1, path.Ext(media.URL),
 			)
 
+			// medium, large, orig
+			// can also use + ":orig"
 			var err error
-			res, err := http.Get(media.URL)
+			res, err := http.Get(media.URL + "?name=orig")
 			if err != nil {
 				files[i].Err = err
 				return
@@ -210,6 +212,7 @@ func VXTwitter(url *url.URL) ([]immich.File, error) {
 			if media.Type == VXTwitterMediaTypeVideo ||
 				media.Type == VXTwitterMediaTypeGif {
 
+				// dont need to for thumbnail
 				res, err := http.Get(media.ThumbnailURL)
 				if err != nil {
 					files[i].Err = err
