@@ -128,8 +128,14 @@ func loop() {
 				return
 			}
 
+			filename := path.Base(uri)
+			unescapedFilename, err := url.PathUnescape(filename)
+			if err == nil {
+				filename = unescapedFilename
+			}
+
 			currentFiles[i] = &immich.File{
-				Name: path.Base(uri), Data: data,
+				Name: filename, Data: data,
 			}
 		}
 
