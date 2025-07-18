@@ -14,6 +14,7 @@ import (
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
+	"fyne.io/fyne/v2/data/binding"
 	"github.com/makinori/maki-immich/immich"
 	"github.com/makinori/maki-immich/mobile/android"
 	"github.com/makinori/maki-immich/mobile/makitheme"
@@ -27,6 +28,8 @@ var (
 	currentIntent       *android.Intent
 	currentFiles        []*immich.File
 	currentFilesChanged chan struct{}
+
+	fetchingText binding.String
 )
 
 func showUnknownIntent() {
@@ -47,11 +50,9 @@ func showUnknownIntent() {
 	}})
 }
 
-// func showFetchingImages(from string) {
-// 	showScreenError(ScreenError{Text: []string{
-// 		"#fetching", "from " + from + "...",
-// 	}, NoDismiss: true, NoSelfDestruct: true})
-// }
+func setFetchingText(from string) {
+	fetchingText.Set("fetching from " + from + "...")
+}
 
 func handleTextIntent() {
 	intentURL, err := url.Parse(currentIntent.Text)
@@ -63,13 +64,14 @@ func handleTextIntent() {
 	}
 
 	tryScrape := func(
-		hosts []string, scrapeFn func(url *url.URL) ([]immich.File, error),
+		name string, hosts []string,
+		scrapeFn func(url *url.URL) ([]immich.File, error),
 	) bool {
 		if !slices.Contains(hosts, intentURL.Host) {
 			return false
 		}
 
-		// showFetchingImages(name)
+		setFetchingText(name)
 
 		files, err := scrapeFn(intentURL)
 		if err == nil && len(files) == 0 {
@@ -92,7 +94,7 @@ func handleTextIntent() {
 		return true
 	}
 
-	if tryScrape(scrape.TwitterHosts, scrape.VXTwitter) {
+	if tryScrape("twitter", scrape.TwitterHosts, scrape.VXTwitter) {
 		return
 	}
 
@@ -102,7 +104,7 @@ func handleTextIntent() {
 }
 
 func handleMediaIntent() {
-	// showFetchingImages("content://")
+	setFetchingText("content://")
 
 	currentFiles = make([]*immich.File, len(currentIntent.URI))
 
@@ -141,8 +143,10 @@ func loop() {
 	}
 
 	currentIntent = &intent
-
 	currentFilesChanged = make(chan struct{}, 1)
+
+	fetchingText = binding.NewString()
+	fetchingText.Set("loading...")
 
 	switch strings.SplitN(intent.Type, "/", 2)[0] {
 	case "text":

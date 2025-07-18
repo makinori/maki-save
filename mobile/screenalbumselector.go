@@ -94,7 +94,7 @@ func getImagesGrid(files []*immich.File, onClick func(*immich.File)) fyne.Canvas
 
 	if len(files) == 0 {
 		return NewMinSize(fyne.Size{Height: minHeight},
-			container.NewCenter(widget.NewLabel("loading...")),
+			container.NewCenter(widget.NewLabelWithData(fetchingText)),
 		)
 	}
 
