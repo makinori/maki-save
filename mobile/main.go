@@ -32,6 +32,10 @@ var (
 	fetchingText binding.String
 )
 
+const (
+	BUTTON_HEIGHT_MUL = 1.25
+)
+
 func showUnknownIntent() {
 	lines := []string{
 		"action: " + currentIntent.Action,

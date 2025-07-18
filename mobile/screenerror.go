@@ -107,9 +107,15 @@ func showScreenError(in ScreenError) {
 
 	if !in.NoDismiss {
 		// show dismiss button near bottom so its easier to press after uploading
+
+		button := widget.NewButton("dismiss", func() { os.Exit(0) })
+		buttonContainer := NewMinSize(
+			fyne.Size{Height: button.MinSize().Height * BUTTON_HEIGHT_MUL},
+			button,
+		)
+
 		finalContainer = container.NewBorder(
-			nil, widget.NewButton("dismiss", func() { os.Exit(0) }),
-			nil, nil,
+			nil, buttonContainer, nil, nil,
 			finalContainer,
 		)
 	}

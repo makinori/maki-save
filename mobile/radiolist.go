@@ -72,7 +72,10 @@ func radioList(options []string, onSelect *func(int), onCancel func()) *fyne.Con
 	// 	widget.NewLabel("Select an album to upload to"),
 	// )
 
-	buttons := container.NewBorder(nil, nil, cancelButton, nil, selectButton)
+	buttons := NewMinSize(
+		fyne.Size{Height: selectButton.MinSize().Height * BUTTON_HEIGHT_MUL},
+		container.NewBorder(nil, nil, cancelButton, nil, selectButton),
+	)
 
 	box := container.NewBorder(
 		// label,
