@@ -131,14 +131,29 @@ func handleMediaIntent() {
 	}
 }
 
+var showingIntroScreen = false
+
 func loop() {
 	if currentIntent != nil {
 		return
 	}
 
 	intent := android.GetIntent()
+
 	if intent.Action != android.ACTION_SEND &&
 		intent.Action != android.ACTION_SEND_MULTIPLE {
+
+		if !showingIntroScreen {
+			showScreenError(ScreenError{
+				Text: []string{
+					"#maki immich", "share an image to this app",
+				},
+				// will conditionally self destruct below in main()
+				NoSelfDestruct: true,
+			})
+			showingIntroScreen = true
+		}
+
 		return
 	}
 
@@ -174,14 +189,6 @@ func main() {
 			Height: 700,
 		})
 	}
-
-	showScreenError(ScreenError{
-		Text: []string{
-			"#maki immich", "share an image to this app",
-		},
-		// will conditionally self destruct below
-		NoSelfDestruct: true,
-	})
 
 	go func() {
 		for {

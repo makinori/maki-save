@@ -80,31 +80,41 @@ func showScreenError(in ScreenError) {
 		}
 	}
 
-	if !in.NoDismiss {
-		// smaller spacer
-		segments = append(segments, &widget.TextSegment{
-			Style: widget.RichTextStyle{
-				SizeName: theme.SizeNameSeparatorThickness,
-			},
-		})
-	}
+	// if !in.NoDismiss {
+	// 	// smaller spacer
+	// 	segments = append(segments, &widget.TextSegment{
+	// 		Style: widget.RichTextStyle{
+	// 			SizeName: theme.SizeNameSeparatorThickness,
+	// 		},
+	// 	})
+	// }
 
 	var content = []fyne.CanvasObject{
 		layout.NewSpacer(),
 		widget.NewRichText(segments...),
 	}
 
-	if !in.NoDismiss {
-		// TODO: show dismiss button near bottom
-		dismissButton := widget.NewButton("dismiss", func() { os.Exit(0) })
-		content = append(content, container.NewCenter(dismissButton))
-	}
+	// if !in.NoDismiss {
+	// 	dismissButton := widget.NewButton("dismiss", func() { os.Exit(0) })
+	// 	content = append(content, container.NewCenter(dismissButton))
+	// }
 
 	content = append(content,
 		layout.NewSpacer(),
 	)
 
+	var finalContainer = container.NewVBox(content...)
+
+	if !in.NoDismiss {
+		// show dismiss button near bottom so its easier to press after uploading
+		finalContainer = container.NewBorder(
+			nil, widget.NewButton("dismiss", func() { os.Exit(0) }),
+			nil, nil,
+			finalContainer,
+		)
+	}
+
 	fyne.DoAndWait(func() {
-		window.SetContent(container.NewVBox(content...))
+		window.SetContent(finalContainer)
 	})
 }
