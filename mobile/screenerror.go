@@ -95,6 +95,7 @@ func showScreenError(in ScreenError) {
 	}
 
 	if !in.NoDismiss {
+		// TODO: show dismiss button near bottom
 		dismissButton := widget.NewButton("dismiss", func() { os.Exit(0) })
 		content = append(content, container.NewCenter(dismissButton))
 	}

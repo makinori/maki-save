@@ -90,6 +90,14 @@ func getImageWidget(file *immich.File, onClick func()) fyne.CanvasObject {
 }
 
 func getImagesGrid(files []*immich.File, onClick func(*immich.File)) fyne.CanvasObject {
+	var minHeight float32 = 300
+
+	if len(files) == 0 {
+		return NewMinSize(fyne.Size{Height: minHeight},
+			container.NewCenter(widget.NewLabel("loading...")),
+		)
+	}
+
 	cols := int(math.Ceil(math.Sqrt(float64(len(files)))))
 	images := make([]fyne.CanvasObject, len(files))
 	for i, file := range files {
@@ -98,9 +106,7 @@ func getImagesGrid(files []*immich.File, onClick func(*immich.File)) fyne.Canvas
 		})
 	}
 
-	imagesGrid := NewMinSize(fyne.Size{Height: 250},
-		container.NewGridWithColumns(cols, images...),
-	)
+	imagesGrid := container.NewGridWithColumns(cols, images...)
 
 	textNames := ""
 	textSizes := ""
@@ -116,32 +122,20 @@ func getImagesGrid(files []*immich.File, onClick func(*immich.File)) fyne.Canvas
 
 	labelSizes := widget.NewLabel(textSizes)
 
-	return container.NewBorder(
-		nil, container.NewBorder(
-			nil, nil, nil, labelSizes, labelNames,
-		), nil, nil, imagesGrid,
+	textContainer := container.NewBorder(
+		nil, nil, nil, labelSizes, labelNames,
+	)
+
+	return NewMinSize(fyne.Size{Height: minHeight},
+		container.NewBorder(
+			nil, textContainer, nil, nil, imagesGrid,
+		),
 	)
 }
 
 var albums []immich.Album
 
-func showScreenAlbumSelector() {
-	if len(currentFiles) == 0 {
-		showScreenError(ScreenError{Text: []string{
-			"missing files", "can't display album selector",
-		}})
-		return
-	}
-
-	imagesGrid := getImagesGrid(currentFiles, func(f *immich.File) {
-		i := slices.Index(currentFiles, f)
-		if i == -1 {
-			return
-		}
-		currentFiles = slices.Delete(currentFiles, i, i+1)
-		showScreenAlbumSelector()
-	})
-
+func showScreenAlbumSelector() bool {
 	if len(albums) == 0 {
 		var err error
 		albums, err = immich.GetAlbums()
@@ -149,7 +143,7 @@ func showScreenAlbumSelector() {
 			showScreenError(ScreenError{Text: []string{
 				"failed to get albums", err.Error(),
 			}})
-			return
+			return false
 		}
 	}
 
@@ -158,11 +152,11 @@ func showScreenAlbumSelector() {
 		albumNames[i] = album.AlbumName
 	}
 
-	var onSelect func(i int)
+	var onAlbumSelected func(i int)
 
 	albumRadioList := radioList(
 		albumNames,
-		&onSelect,
+		&onAlbumSelected,
 		func() {
 			os.Exit(0)
 		},
@@ -170,9 +164,9 @@ func showScreenAlbumSelector() {
 
 	uploadingLabel := widget.NewLabel("uploading...")
 
-	box := container.NewBorder(imagesGrid, nil, nil, nil, albumRadioList)
+	var box *fyne.Container
 
-	onSelect = func(i int) {
+	onAlbumSelected = func(i int) {
 		go func() {
 			fyne.Do(func() {
 				box.Objects[0] = container.NewCenter(uploadingLabel)
@@ -198,7 +192,43 @@ func showScreenAlbumSelector() {
 		}()
 	}
 
-	fyne.DoAndWait(func() {
-		window.SetContent(box)
-	})
+	var updateImagesGrid func(errIfNoneLeft bool)
+
+	updateImagesGrid = func(errIfNoneLeft bool) {
+		if errIfNoneLeft {
+			showScreenError(ScreenError{Text: []string{
+				"no files", "none at all",
+			}})
+			return
+		}
+
+		imagesGrid := getImagesGrid(currentFiles, func(f *immich.File) {
+			i := slices.Index(currentFiles, f)
+			if i == -1 {
+				return
+			}
+			currentFiles = slices.Delete(currentFiles, i, i+1)
+			updateImagesGrid(true)
+		})
+
+		box = container.NewBorder(imagesGrid, nil, nil, nil, albumRadioList)
+
+		fyne.DoAndWait(func() {
+			window.SetContent(box)
+		})
+	}
+
+	updateImagesGrid(false)
+
+	go func() {
+		<-currentFilesChanged
+
+		if len(currentFiles) == 0 {
+			return
+		}
+
+		updateImagesGrid(false)
+	}()
+
+	return true
 }
