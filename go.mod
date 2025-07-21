@@ -4,6 +4,8 @@ go 1.24.4
 
 require (
 	fyne.io/fyne/v2 v2.6.1
+	github.com/forPelevin/gomoji v1.3.1
+	github.com/rivo/uniseg v0.4.7
 	golang.org/x/sync v0.13.0
 )
 

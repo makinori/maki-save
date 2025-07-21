@@ -6,7 +6,38 @@ import (
 	"fyne.io/fyne/v2/data/binding"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+	"github.com/forPelevin/gomoji"
+	"github.com/rivo/uniseg"
 )
+
+func splitByEmoji(input string) []string {
+	out := []string{}
+	currentStr := ""
+
+	gr := uniseg.NewGraphemes(input)
+
+	for gr.Next() {
+		str := gr.Str()
+
+		emoji, err := gomoji.GetInfo(str)
+		if err == nil {
+			if currentStr != "" {
+				out = append(out, currentStr)
+				currentStr = ""
+			}
+			out = append(out, emoji.Character)
+			continue
+		}
+
+		currentStr += str
+	}
+
+	if currentStr != "" {
+		out = append(out, currentStr)
+	}
+
+	return out
+}
 
 func radioList(
 	options []string, disableSelect binding.Bool,
@@ -66,24 +97,41 @@ func radioList(
 	hasSelected.AddListener(binding.NewDataListener(updateSelectButton))
 	disableSelect.AddListener(binding.NewDataListener(updateSelectButton))
 
+	// fyne removes spaces after emojis in instance of: <emoji><space>text
+	// so make multiple segments i guess
+	optionsSegmented := make([][]string, len(options))
+	for i, option := range options {
+		// might be a heavy function cause of iteration
+		optionsSegmented[i] = splitByEmoji(option)
+	}
+
 	listScroll := widget.NewList(
 		func() int {
 			return len(options)
 		},
 		func() fyne.CanvasObject {
 			// return widget.NewLabel("")
-			return widget.NewRichText(&widget.TextSegment{
-				Text: "",
-				Style: widget.RichTextStyle{
-					SizeName: theme.SizeNameSubHeadingText,
-				},
-			})
+			return widget.NewRichText()
 		},
 		func(i widget.ListItemID, obj fyne.CanvasObject) {
 			// obj.(*widget.Label).SetText(options[i])
+
 			text := obj.(*widget.RichText)
-			segment := text.Segments[0].(*widget.TextSegment)
-			segment.Text = options[i]
+			// segment := text.Segments[0].(*widget.TextSegment)
+			// segment.Text = options[i]
+
+			text.Segments = make([]widget.RichTextSegment, len(optionsSegmented[i]))
+
+			for i, segment := range optionsSegmented[i] {
+				text.Segments[i] = &widget.TextSegment{
+					Text: segment,
+					Style: widget.RichTextStyle{
+						Inline:   true,
+						SizeName: theme.SizeNameSubHeadingText,
+					},
+				}
+			}
+
 			text.Refresh()
 		},
 	)
