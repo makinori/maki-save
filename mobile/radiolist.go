@@ -98,11 +98,22 @@ func radioList(
 	disableSelect.AddListener(binding.NewDataListener(updateSelectButton))
 
 	// fyne removes spaces after emojis in instance of: <emoji><space>text
-	// so make multiple segments i guess
-	optionsSegmented := make([][]string, len(options))
+	// so prepare multiple segments i guess
+
+	optionsSegments := make([][]widget.RichTextSegment, len(options))
+
 	for i, option := range options {
-		// might be a heavy function cause of iteration
-		optionsSegmented[i] = splitByEmoji(option)
+		segments := splitByEmoji(option)
+		optionsSegments[i] = make([]widget.RichTextSegment, len(segments))
+		for j, segment := range segments {
+			optionsSegments[i][j] = &widget.TextSegment{
+				Text: segment,
+				Style: widget.RichTextStyle{
+					Inline:   true,
+					SizeName: theme.SizeNameSubHeadingText,
+				},
+			}
+		}
 	}
 
 	listScroll := widget.NewList(
@@ -120,18 +131,7 @@ func radioList(
 			// segment := text.Segments[0].(*widget.TextSegment)
 			// segment.Text = options[i]
 
-			text.Segments = make([]widget.RichTextSegment, len(optionsSegmented[i]))
-
-			for i, segment := range optionsSegmented[i] {
-				text.Segments[i] = &widget.TextSegment{
-					Text: segment,
-					Style: widget.RichTextStyle{
-						Inline:   true,
-						SizeName: theme.SizeNameSubHeadingText,
-					},
-				}
-			}
-
+			text.Segments = optionsSegments[i]
 			text.Refresh()
 		},
 	)
