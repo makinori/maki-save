@@ -13,6 +13,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/data/binding"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/makinori/maki-immich/immich"
@@ -152,10 +153,13 @@ func showScreenAlbumSelector() bool {
 		albumNames[i] = album.AlbumName
 	}
 
+	albumDisableSelect := binding.NewBool()
+
 	var onAlbumSelected func(i int)
 
 	albumRadioList := radioList(
 		albumNames,
+		albumDisableSelect,
 		&onAlbumSelected,
 		func() {
 			os.Exit(0)
@@ -200,6 +204,12 @@ func showScreenAlbumSelector() bool {
 				"no files", "none at all",
 			}})
 			return
+		}
+
+		if len(currentFiles) == 0 {
+			albumDisableSelect.Set(true)
+		} else {
+			albumDisableSelect.Set(false)
 		}
 
 		imagesGrid := getImagesGrid(currentFiles, func(f *immich.File) {

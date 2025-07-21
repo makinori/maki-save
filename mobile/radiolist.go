@@ -3,11 +3,15 @@ package main
 import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/data/binding"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 )
 
-func radioList(options []string, onSelect *func(int), onCancel func()) *fyne.Container {
+func radioList(
+	options []string, disableSelect binding.Bool,
+	onSelect *func(int), onCancel func(),
+) *fyne.Container {
 	var selected int
 
 	// w.Canvas().SetOnTypedKey(func(event *fyne.KeyEvent) {
@@ -39,7 +43,28 @@ func radioList(options []string, onSelect *func(int), onCancel func()) *fyne.Con
 		},
 	)
 
-	selectButton.Disable()
+	// create binding and && with disabled binding
+
+	hasSelected := binding.NewBool()
+
+	updateSelectButton := func() {
+		a, _ := hasSelected.Get()
+		if !a {
+			selectButton.Disable()
+			return
+		}
+		b, _ := disableSelect.Get()
+		if b {
+			selectButton.Disable()
+			return
+		}
+		selectButton.Enable()
+	}
+
+	updateSelectButton()
+
+	hasSelected.AddListener(binding.NewDataListener(updateSelectButton))
+	disableSelect.AddListener(binding.NewDataListener(updateSelectButton))
 
 	listScroll := widget.NewList(
 		func() int {
@@ -65,7 +90,7 @@ func radioList(options []string, onSelect *func(int), onCancel func()) *fyne.Con
 
 	listScroll.OnSelected = func(i widget.ListItemID) {
 		selected = i
-		selectButton.Enable()
+		hasSelected.Set(true)
 	}
 
 	// label := container.NewCenter(
