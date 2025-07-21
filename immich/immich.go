@@ -114,7 +114,7 @@ func GetAlbums() ([]Album, error) {
 
 	req.Header.Add("x-api-key", IMMICH_API_KEY)
 
-	res, err := new(http.Client).Do(req)
+	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -173,7 +173,7 @@ func uploadAsset(data []byte, filename string, dateStr string) (string, error) {
 	req.Header.Add("x-api-key", IMMICH_API_KEY)
 	req.Header.Add("Content-Type", mp.FormDataContentType())
 
-	res, err := new(http.Client).Do(req)
+	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return "", err
 	}
@@ -222,7 +222,7 @@ func updateAssetDate(assetId string, dateStr string) error {
 	req.Header.Add("x-api-key", IMMICH_API_KEY)
 	req.Header.Add("Content-Type", "application/json")
 
-	res, err := new(http.Client).Do(req)
+	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return err
 	}
@@ -258,7 +258,7 @@ func addToAlbum(albumId string, assetId string) error {
 	req.Header.Add("x-api-key", IMMICH_API_KEY)
 	req.Header.Add("Content-Type", "application/json")
 
-	res, err := new(http.Client).Do(req)
+	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return err
 	}

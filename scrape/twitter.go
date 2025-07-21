@@ -48,8 +48,7 @@ func Nitter(url *url.URL) ([]immich.File, error) {
 	req.Header.Add("Accept-Encoding", "none")
 	req.Header.Add("Sec-GPC", "1")
 
-	client := http.Client{}
-	res, err := client.Do(req)
+	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return []immich.File{}, err
 	}
