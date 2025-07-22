@@ -122,7 +122,7 @@ func radioList(
 		},
 		func() fyne.CanvasObject {
 			// return widget.NewLabel("")
-			return widget.NewRichText()
+			return widget.NewRichText(optionsSegments[0]...)
 		},
 		func(i widget.ListItemID, obj fyne.CanvasObject) {
 			// obj.(*widget.Label).SetText(options[i])
