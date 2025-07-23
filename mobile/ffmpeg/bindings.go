@@ -1,0 +1,200 @@
+package ffmpeg
+
+import (
+	"embed"
+	"fmt"
+	"io/fs"
+	"os"
+	"path"
+	"runtime"
+
+	"github.com/ebitengine/purego"
+)
+
+// the *.so files come from
+// https://central.sonatype.com/artifact/com.mrljdx/ffmpeg-kit-full/6.1.4
+// https://repo1.maven.org/maven2/com/mrljdx/ffmpeg-kit-full/6.1.4/
+
+var (
+	// avformat
+	avformat_open_input func(
+		ps **AVFormatContext, url string, fmt *AVInputFormat, options **AVDictionary,
+	) int32
+	avformat_close_input          func(s **AVFormatContext)
+	avformat_find_stream_info     func(ic *AVFormatContext, options **AVDictionary) int32
+	av_dump_format                func(ic *AVFormatContext, index int32, url string, is_output int32)
+	avcodec_find_decoder          func(id AVCodecID) *AVCodec
+	avcodec_alloc_context3        func(codec *AVCodec) *AVCodecContext
+	avcodec_free_context          func(avctx **AVCodecContext)
+	avcodec_parameters_to_context func(codec *AVCodecContext, par *AVCodecParameters) int32
+	avcodec_open2                 func(avctx *AVCodecContext, codec *AVCodec, options **AVDictionary) int
+	av_read_frame                 func(s *AVFormatContext, pkt *AVPacket) int32
+
+	// avutil
+	av_frame_alloc           func() *AVFrame
+	av_frame_free            func(frame **AVFrame)
+	av_image_get_buffer_size func(pix_fmt AVPixelFormat, width, height, align int32) int32
+	av_image_fill_arrays     func(dst_data **uint8, dst_linesize *int32, src *uint8,
+		pix_fmt AVPixelFormat, width, height, align int32) int32
+
+	// swscale
+	sws_getContext func(srcW, srcH int32, srcFormat AVPixelFormat,
+		dstW, dstH int32, dstFormat AVPixelFormat,
+		flags int32, srcFilter *SwsFilter,
+		dstFilter *SwsFilter, param *float64) *SwsContext
+	sws_freeContext func(swsContext *SwsContext)
+	sws_scale       func(c *SwsContext, srcSlice **uint8,
+		srcStride *int32, srcSliceY, srcSliceH int32,
+		dst **uint8, dstStride *int32) int32
+
+	// avcodec
+	av_packet_alloc       func() *AVPacket
+	av_packet_free        func(pkt **AVPacket)
+	av_packet_unref       func(pkt *AVPacket)
+	avcodec_send_packet   func(avctx *AVCodecContext, avpkt *AVPacket) int32
+	avcodec_receive_frame func(avctx *AVCodecContext, frame *AVFrame) int32
+)
+
+var initialized = false
+
+var (
+	//go:embed arm64-v8a
+	androidLibs       embed.FS
+	androidLibsTmpDir string
+
+	handles = map[string]uintptr{}
+)
+
+func openLib(name string) (uintptr, error) {
+	handle, ok := handles[name]
+	if ok {
+		return handle, nil
+	}
+
+	handle, err := purego.Dlopen(
+		path.Join(androidLibsTmpDir, name), purego.RTLD_LAZY,
+	)
+	if err != nil {
+		return 0, err
+	}
+
+	handles[name] = handle
+
+	return handle, nil
+}
+
+func initFFmpeg() error {
+	if initialized {
+		return nil
+	}
+	initialized = true
+
+	// make tmp dir
+
+	if runtime.GOOS == "android" && runtime.GOARCH == "arm64" {
+		var err error
+		androidLibsTmpDir, err = os.MkdirTemp("", "ffmpeg")
+		if err != nil {
+			closeFfmpeg()
+			return err
+		}
+
+		fmt.Println("added tmp dir: " + androidLibsTmpDir)
+
+		libs, _ := fs.ReadDir(androidLibs, "arm64-v8a")
+		for _, lib := range libs {
+			if lib.IsDir() {
+				continue
+			}
+			data, _ := fs.ReadFile(androidLibs, path.Join("arm64-v8a", lib.Name()))
+			os.WriteFile(path.Join(androidLibsTmpDir, lib.Name()), data, 0755)
+		}
+
+		// preload libs. order matters
+
+		for _, name := range []string{
+			"libc++_shared.so", "libavutil.so", "libswresample.so", "libavcodec.so",
+		} {
+			_, err := openLib(name)
+			if err != nil {
+				closeFfmpeg()
+				return err
+			}
+		}
+	}
+
+	// bind
+
+	r := purego.RegisterLibFunc
+
+	avformat, err := openLib("libavformat.so")
+	if err != nil {
+		closeFfmpeg()
+		return err
+	}
+
+	r(&avformat_open_input, avformat, "avformat_open_input")
+	r(&avformat_close_input, avformat, "avformat_close_input")
+	r(&avformat_find_stream_info, avformat, "avformat_find_stream_info")
+	r(&av_dump_format, avformat, "av_dump_format")
+	r(&avcodec_find_decoder, avformat, "avcodec_find_decoder")
+	r(&avcodec_alloc_context3, avformat, "avcodec_alloc_context3")
+	r(&avcodec_free_context, avformat, "avcodec_free_context")
+	r(&avcodec_parameters_to_context, avformat, "avcodec_parameters_to_context")
+	r(&avcodec_open2, avformat, "avcodec_open2")
+	r(&av_read_frame, avformat, "av_read_frame")
+
+	avutil, err := openLib("libavutil.so")
+	if err != nil {
+		closeFfmpeg()
+		return err
+	}
+
+	r(&av_frame_alloc, avutil, "av_frame_alloc")
+	r(&av_frame_free, avutil, "av_frame_free")
+	r(&av_image_get_buffer_size, avutil, "av_image_get_buffer_size")
+	r(&av_image_fill_arrays, avutil, "av_image_fill_arrays")
+
+	swscale, err := openLib("libswscale.so")
+	if err != nil {
+		closeFfmpeg()
+		return err
+	}
+
+	r(&sws_getContext, swscale, "sws_getContext")
+	r(&sws_freeContext, swscale, "sws_freeContext")
+	r(&sws_scale, swscale, "sws_scale")
+
+	avcodec, err := openLib("libavcodec.so")
+	if err != nil {
+		closeFfmpeg()
+		return err
+	}
+
+	r(&av_packet_alloc, avcodec, "av_packet_alloc")
+	r(&av_packet_free, avcodec, "av_packet_free")
+	r(&av_packet_unref, avcodec, "av_packet_unref")
+	r(&avcodec_send_packet, avcodec, "avcodec_send_packet")
+	r(&avcodec_receive_frame, avcodec, "avcodec_receive_frame")
+
+	return nil
+}
+
+func closeFfmpeg() {
+	if !initialized {
+		return
+	}
+
+	for _, handle := range handles {
+		purego.Dlclose(handle)
+	}
+	handles = map[string]uintptr{}
+
+	if androidLibsTmpDir != "" {
+		os.RemoveAll(androidLibsTmpDir)
+		fmt.Println("removed tmp dir: " + androidLibsTmpDir)
+		androidLibsTmpDir = ""
+	}
+
+	initialized = false
+}

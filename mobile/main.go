@@ -4,12 +4,14 @@ import (
 	_ "embed"
 	"errors"
 	"fmt"
+	"net/http"
 	"net/url"
 	"os"
 	"path"
 	"runtime"
 	"slices"
 	"strings"
+	"sync"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -17,6 +19,7 @@ import (
 	"fyne.io/fyne/v2/data/binding"
 	"github.com/makinori/maki-immich/immich"
 	"github.com/makinori/maki-immich/mobile/android"
+	"github.com/makinori/maki-immich/mobile/ffmpeg"
 	"github.com/makinori/maki-immich/mobile/makitheme"
 	"github.com/makinori/maki-immich/scrape"
 )
@@ -112,27 +115,53 @@ func handleMediaIntent() {
 
 	currentFiles = make([]*immich.File, len(currentIntent.URI))
 
+	var wg sync.WaitGroup
 	for i, uri := range currentIntent.URI {
-		data := android.ReadContent(uri)
-		if len(data) == 0 {
-			showScreenError(ScreenError{Text: []string{
-				"failed to read content", "returned 0 for uri:\n" + uri,
-			}})
-			return
-		}
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
 
-		filename := path.Base(uri)
-		unescapedFilename, err := url.PathUnescape(filename)
-		if err == nil {
-			filename = unescapedFilename
-		}
+			data := android.ReadContent(uri)
+			if len(data) == 0 {
+				showScreenError(ScreenError{Text: []string{
+					"failed to read content", "returned 0 for uri:\n" + uri,
+				}})
+				return
+			}
 
-		currentFiles[i] = &immich.File{
-			Name: filename, Data: data,
-		}
+			filename := path.Base(uri)
+			unescapedFilename, err := url.PathUnescape(filename)
+			if err == nil {
+				filename = unescapedFilename
+			}
 
-		currentFilesChanged <- struct{}{}
+			currentFiles[i] = &immich.File{
+				Name: filename, Data: data,
+			}
+
+			// generate thumbnail if video
+
+			contentType := http.DetectContentType(data)
+
+			// some videos aren't being recognized,
+			// so handle application/octet-stream too
+			if !strings.HasPrefix(contentType, "video/") &&
+				contentType != "application/octet-stream" {
+				return
+			}
+
+			thumbnail, err := ffmpeg.GetFrameFromVideo(data)
+			if err != nil {
+				fmt.Println("failed to get thumbnail: " + err.Error())
+			} else {
+				currentFiles[i].Thumbnail = thumbnail
+			}
+		}()
 	}
+
+	wg.Wait()
+
+	currentFilesChanged <- struct{}{}
 }
 
 var showingIntroScreen = false
