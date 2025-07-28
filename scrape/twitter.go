@@ -26,10 +26,11 @@ var (
 	twitterPathRegexp = regexp.MustCompile(`(?i)\/(.+?)\/status\/([0-9]+)`)
 
 	// /pic/media/someid.jpg?name=small&format=webp
-	// '---------------'
 	// /pic/amplify_video_thumb/someid/img/someid.jpg?name=small&format=webp
-	// '----------------------------------------'
+	// removes including and after .jpg
 	twitterMediaPathPrefix = regexp.MustCompile(`(.+)\..+$`)
+
+	cleanUpExt = regexp.MustCompile(`(?i)[^\.a-z0-9].*$`)
 
 	//go:embed nitter.txt
 	nitterURLString string
@@ -46,8 +47,11 @@ func getTwitterImageURLs(
 		go func() {
 			defer wg.Done()
 
+			ext := path.Ext(imageURL)
+			ext = cleanUpExt.ReplaceAllString(ext, "")
+
 			files[i].Name = fmt.Sprintf("%s-%s-%02d%s",
-				username, id, i+1, path.Ext(imageURL),
+				username, id, i+1, ext,
 			)
 
 			var err error
