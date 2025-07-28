@@ -101,7 +101,7 @@ func handleTextIntent() {
 		return true
 	}
 
-	if tryScrape("twitter", scrape.TwitterHosts, scrape.VXTwitter) {
+	if tryScrape("twitter", scrape.TwitterHosts, scrape.Nitter) {
 		return
 	}
 

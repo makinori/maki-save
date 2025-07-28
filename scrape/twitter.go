@@ -1,7 +1,7 @@
 package scrape
 
 import (
-	"encoding/json"
+	_ "embed"
 	"errors"
 	"fmt"
 	"io"
@@ -11,6 +11,7 @@ import (
 	"regexp"
 	"sync"
 
+	"github.com/PuerkitoBio/goquery"
 	"github.com/makinori/maki-immich/immich"
 )
 
@@ -23,11 +24,88 @@ var (
 	}
 
 	twitterPathRegexp = regexp.MustCompile(`(?i)\/(.+?)\/status\/([0-9]+)`)
+
+	// /pic/media/someid.jpg?name=small&format=webp
+	// '---------------'
+	// /pic/amplify_video_thumb/someid/img/someid.jpg?name=small&format=webp
+	// '----------------------------------------'
+	twitterMediaPathPrefix = regexp.MustCompile(`(.+)\..+$`)
+
+	//go:embed nitter.txt
+	nitterURLString string
 )
 
-/*
-func Nitter(url *url.URL) ([]immich.File, error) {
-	twitterPathMatches := twitterPathRegexp.FindStringSubmatch(url.Path)
+func getTwitterImageURLs(
+	username, id string, imageURLs []string,
+) []immich.File {
+	files := make([]immich.File, len(imageURLs))
+
+	wg := sync.WaitGroup{}
+	for i, imageURL := range imageURLs {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+
+			files[i].Name = fmt.Sprintf("%s-%s-%02d%s",
+				username, id, i+1, path.Ext(imageURL),
+			)
+
+			var err error
+			res, err := http.Get(imageURL)
+			if err != nil {
+				files[i].Err = err
+				return
+			}
+			defer res.Body.Close()
+
+			files[i].Data, err = io.ReadAll(res.Body)
+			if err != nil {
+				files[i].Err = err
+				return
+			}
+
+			// if media.Type == VXTwitterMediaTypeVideo ||
+			// 	media.Type == VXTwitterMediaTypeGif {
+
+			// 	// dont need to for thumbnail
+			// 	res, err := http.Get(media.ThumbnailURL)
+			// 	if err != nil {
+			// 		files[i].Err = err
+			// 		return
+			// 	}
+			// 	defer res.Body.Close()
+
+			// 	files[i].Thumbnail, err = io.ReadAll(res.Body)
+			// 	if err != nil {
+			// 		files[i].Err = err
+			// 		return
+			// 	}
+			// }
+		}()
+	}
+	wg.Wait()
+
+	return files
+}
+
+func nitterFixImageURL(nitterURL url.URL, escapedPath string) (string, error) {
+	path, err := url.PathUnescape(escapedPath)
+	if err != nil {
+		return "", err
+	}
+
+	prefixMatches := twitterMediaPathPrefix.FindStringSubmatch(path)
+	if len(prefixMatches) == 0 {
+		return "", errors.New("failed to match media prefix")
+	}
+
+	nitterURL.Path = prefixMatches[1] + ".jpg?name=orig&format=jpg"
+
+	return nitterURL.String(), nil
+}
+
+func Nitter(inputURL *url.URL) ([]immich.File, error) {
+	twitterPathMatches := twitterPathRegexp.FindStringSubmatch(inputURL.Path)
 	if len(twitterPathMatches) == 0 {
 		return []immich.File{}, errors.New("failed to match username and id from url")
 	}
@@ -35,9 +113,14 @@ func Nitter(url *url.URL) ([]immich.File, error) {
 	username := twitterPathMatches[1]
 	id := twitterPathMatches[2]
 
-	filenamePrefix := username + "-" + id
+	nitterURL, err := url.Parse(nitterURLString)
+	if err != nil {
+		return []immich.File{}, err
+	}
 
-	req, err := http.NewRequest("GET", "https://nitter.net"+url.Path, nil)
+	nitterURL.Path = inputURL.Path
+
+	req, err := http.NewRequest("GET", nitterURL.String(), nil)
 	if err != nil {
 		return []immich.File{}, err
 	}
@@ -47,6 +130,11 @@ func Nitter(url *url.URL) ([]immich.File, error) {
 	req.Header.Add("Accept-Language", "en-US,en;q=0.5")
 	req.Header.Add("Accept-Encoding", "none")
 	req.Header.Add("Sec-GPC", "1")
+
+	req.AddCookie(&http.Cookie{
+		Name:  "hlsPlayback",
+		Value: "on",
+	})
 
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -68,44 +156,41 @@ func Nitter(url *url.URL) ([]immich.File, error) {
 		return []immich.File{}, errors.New("failed to find username in response")
 	}
 
-	imageUrls := []string{}
+	imageURLs := []string{}
 
-	doc.Find("meta[property='twitter:image:src']").Each(func(i int, s *goquery.Selection) {
-		imageUrl, ok := s.Attr("content")
+	doc.Find(".main-tweet .attachment img").Each(func(i int, s *goquery.Selection) {
+		imagePath, ok := s.Attr("src")
 		if !ok {
 			return
 		}
-		imageUrls = append(imageUrls, imageUrl)
+
+		imageURL, err := nitterFixImageURL(*nitterURL, imagePath)
+		if err != nil {
+			return
+		}
+
+		imageURLs = append(imageURLs, imageURL)
 	})
 
-	files := make([]immich.File, len(imageUrls))
+	doc.Find(".main-tweet .attachment video").Each(func(i int, s *goquery.Selection) {
+		thumbnailPath, ok := s.Attr("poster")
+		if !ok {
+			return
+		}
 
-	wg := sync.WaitGroup{}
-	for i, imageUrl := range imageUrls {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		thumbnailURL, err := nitterFixImageURL(*nitterURL, thumbnailPath)
+		if err != nil {
+			return
+		}
 
-			files[i].Name = fmt.Sprintf("%s-%02d%s",
-				filenamePrefix, i+1, path.Ext(imageUrl),
-			)
+		// TODO: get video url
 
-			var err error
-			res, err := http.Get(imageUrl)
-			if err != nil {
-				files[i].Err = err
-				return
-			}
-			defer res.Body.Close()
+		fmt.Println(thumbnailURL)
+	})
 
-			files[i].Data, err = io.ReadAll(res.Body)
-			if err != nil {
-				files[i].Err = err
-				return
-			}
-		}()
-	}
-	wg.Wait()
+	files := getTwitterImageURLs(
+		username, id, imageURLs,
+	)
 
 	errText := ""
 	for _, file := range files {
@@ -120,8 +205,8 @@ func Nitter(url *url.URL) ([]immich.File, error) {
 
 	return files, nil
 }
-*/
 
+/*
 type VXTwitterMediaType string
 
 const (
@@ -178,56 +263,16 @@ func VXTwitter(url *url.URL) ([]immich.File, error) {
 		vxTwitterRes.QuoteRetweet.Media...,
 	)
 
-	filenamePrefix := vxTwitterRes.Username + "-" + vxTwitterRes.ID
-
-	files := make([]immich.File, len(foundMedia))
-
-	wg := sync.WaitGroup{}
+	imageURLs := make([]string, len(foundMedia))
 	for i, media := range foundMedia {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-
-			files[i].Name = fmt.Sprintf("%s-%02d%s",
-				filenamePrefix, i+1, path.Ext(media.URL),
-			)
-
-			// medium, large, orig
-			// can also use + ":orig"
-			var err error
-			res, err := http.Get(media.URL + "?name=orig")
-			if err != nil {
-				files[i].Err = err
-				return
-			}
-			defer res.Body.Close()
-
-			files[i].Data, err = io.ReadAll(res.Body)
-			if err != nil {
-				files[i].Err = err
-				return
-			}
-
-			if media.Type == VXTwitterMediaTypeVideo ||
-				media.Type == VXTwitterMediaTypeGif {
-
-				// dont need to for thumbnail
-				res, err := http.Get(media.ThumbnailURL)
-				if err != nil {
-					files[i].Err = err
-					return
-				}
-				defer res.Body.Close()
-
-				files[i].Thumbnail, err = io.ReadAll(res.Body)
-				if err != nil {
-					files[i].Err = err
-					return
-				}
-			}
-		}()
+		// medium, large, orig
+		// can also use + ":orig"
+		imageURLs[i] = media.URL + "?name=orig"
 	}
-	wg.Wait()
+
+	files := getTwitterImageURLs(
+		vxTwitterRes.Username, vxTwitterRes.ID, imageURLs,
+	)
 
 	errText := ""
 	for _, file := range files {
@@ -242,3 +287,4 @@ func VXTwitter(url *url.URL) ([]immich.File, error) {
 
 	return files, nil
 }
+*/
