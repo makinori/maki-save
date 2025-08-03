@@ -199,14 +199,13 @@ func showScreenAlbumSelector() bool {
 	var updateImagesGrid func(errIfNoneLeft bool)
 
 	updateImagesGrid = func(errIfNoneLeft bool) {
-		if errIfNoneLeft {
-			showScreenError(ScreenError{Text: []string{
-				"no files", "none at all",
-			}})
-			return
-		}
-
 		if len(currentFiles) == 0 {
+			if errIfNoneLeft {
+				showScreenError(ScreenError{Text: []string{
+					"no files", "none at all",
+				}})
+				return
+			}
 			albumDisableSelect.Set(true)
 		} else {
 			albumDisableSelect.Set(false)
