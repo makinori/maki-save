@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"sync"
 
 	"github.com/makinori/maki-immich/immich"
 )
@@ -28,14 +29,17 @@ type VXTwitterMedia struct {
 	URL          string             `json:"url"`
 }
 
-type VXTwitterRes struct {
+type VXTwitterTweet struct {
 	Media        []VXTwitterMedia `json:"media_extended"`
-	QuoteRetweet struct {
+	QuoteRetweet *struct {
 		Media []VXTwitterMedia `json:"media_extended"`
+		ID    string           `json:"tweetID"`
+		// DisplayName string `json:"user_name"`
+		Username string `json:"user_screen_name"`
 	} `json:"qrt"`
-	ID          string `json:"tweetID"`
-	DisplayName string `json:"user_name"`
-	Username    string `json:"user_screen_name"`
+	ID string `json:"tweetID"`
+	// DisplayName string `json:"user_name"`
+	Username string `json:"user_screen_name"`
 }
 
 func vxTwitterImageURL(inputURL string) string {
@@ -58,42 +62,14 @@ func vxTwitterImageURL(inputURL string) string {
 	return imageURL.String()
 }
 
-func VXTwitter(url *url.URL) ([]immich.File, error) {
-	twitterPathMatches := twitterPathRegexp.FindStringSubmatch(url.Path)
-	if len(twitterPathMatches) == 0 {
-		return []immich.File{}, errors.New("failed to match username and id from url")
-	}
+func vxTwitterProcessMedia(
+	tweetID string, username string, tweetMedia []VXTwitterMedia,
+	outputFiles []immich.File,
+) {
+	fileURLs := make([]string, len(tweetMedia))
+	thumbnailURLs := make([]string, len(tweetMedia))
 
-	res, err := http.Get("https://api.vxtwitter.com" + url.Path)
-	if err != nil {
-		return []immich.File{}, err
-	}
-	defer res.Body.Close()
-
-	if res.StatusCode != 200 {
-		return []immich.File{}, fmt.Errorf("%d: %s", res.StatusCode, res.Status)
-	}
-
-	data, err := io.ReadAll(res.Body)
-	if err != nil {
-		return []immich.File{}, err
-	}
-
-	vxTwitterRes := VXTwitterRes{}
-	err = json.Unmarshal(data, &vxTwitterRes)
-	if err != nil {
-		return []immich.File{}, err
-	}
-
-	foundMedia := append(
-		vxTwitterRes.Media,
-		vxTwitterRes.QuoteRetweet.Media...,
-	)
-
-	fileURLs := make([]string, len(foundMedia))
-	thumbnailURLs := make([]string, len(foundMedia))
-
-	for i, media := range foundMedia {
+	for i, media := range tweetMedia {
 		switch media.Type {
 		case VXTwitterMediaTypeImage:
 			fileURLs[i] = vxTwitterImageURL(media.URL)
@@ -103,10 +79,75 @@ func VXTwitter(url *url.URL) ([]immich.File, error) {
 		}
 	}
 
-	files := getFilesFromURLs(
-		fmt.Sprintf("%s-%s-", vxTwitterRes.Username, vxTwitterRes.ID),
+	copy(outputFiles, getFilesFromURLs(
+		fmt.Sprintf("%s-%s-", username, tweetID),
 		fileURLs, thumbnailURLs,
-	)
+	))
+}
+
+func VXTwitter(url *url.URL) ([]immich.File, error) {
+	twitterPathMatches := twitterPathRegexp.FindStringSubmatch(url.Path)
+	if len(twitterPathMatches) == 0 {
+		return []immich.File{}, errors.New("failed to match username and id from url")
+	}
+
+	httpRes, err := http.Get("https://api.vxtwitter.com" + url.Path)
+	if err != nil {
+		return []immich.File{}, err
+	}
+	defer httpRes.Body.Close()
+
+	if httpRes.StatusCode != 200 {
+		return []immich.File{}, fmt.Errorf("%d: %s", httpRes.StatusCode, httpRes.Status)
+	}
+
+	jsonData, err := io.ReadAll(httpRes.Body)
+	if err != nil {
+		return []immich.File{}, err
+	}
+
+	tweet := VXTwitterTweet{}
+	err = json.Unmarshal(jsonData, &tweet)
+	if err != nil {
+		return []immich.File{}, err
+	}
+
+	// i dont think you can simulatenously post images and quote retweet
+
+	filesFound := len(tweet.Media)
+	if tweet.QuoteRetweet != nil {
+		filesFound += len(tweet.QuoteRetweet.Media)
+	}
+
+	if filesFound == 0 {
+		return []immich.File{}, nil
+	}
+
+	var files = make([]immich.File, filesFound)
+
+	wg := sync.WaitGroup{}
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		vxTwitterProcessMedia(
+			tweet.ID, tweet.Username, tweet.Media,
+			files[0:len(tweet.Media)],
+		)
+	}()
+
+	if tweet.QuoteRetweet != nil {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			vxTwitterProcessMedia(
+				tweet.QuoteRetweet.ID, tweet.QuoteRetweet.Username,
+				tweet.QuoteRetweet.Media, files[len(tweet.Media):filesFound],
+			)
+		}()
+	}
+
+	wg.Wait()
 
 	errText := ""
 	for _, file := range files {
