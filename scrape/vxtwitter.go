@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 	"sync"
 
 	"github.com/makinori/maki-immich/immich"
@@ -43,21 +44,19 @@ type VXTwitterTweet struct {
 }
 
 func vxTwitterImageURL(inputURL string) string {
-	// medium, large, orig
-	// can also use + ":orig"
-
 	imageURL, err := url.Parse(inputURL)
 	if err != nil {
 		return ""
 	}
 
-	prefixMatches := twitterMediaPathPrefix.FindStringSubmatch(imageURL.Path)
-	if len(prefixMatches) == 0 {
-		return ""
-	}
+	// can use: medium, large, orig
+	imageURL.RawQuery = "name=orig"
 
-	imageURL.RawQuery = "name=orig&format=jpg"
-	imageURL.Path = prefixMatches[1] + ".jpg"
+	// some images are only png, so keep extension
+	// however if webp, turn into jpg
+	if strings.HasSuffix(imageURL.Path, ".webp") {
+		imageURL.Path = imageURL.Path[:len(imageURL.Path)-5] + ".jpg"
+	}
 
 	return imageURL.String()
 }
