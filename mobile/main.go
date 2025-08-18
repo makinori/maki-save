@@ -216,7 +216,7 @@ func main() {
 
 	window = fyneApp.NewWindow("maki immich")
 
-	if runtime.GOOS == "linux" {
+	if runtime.GOOS != "android" {
 		window.Resize(fyne.Size{
 			Width:  400,
 			Height: 700,

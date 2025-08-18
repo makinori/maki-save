@@ -3,7 +3,7 @@ default:
 
 [group("desktop")]
 build:
-	CGO_ENABLED=0 go build -o maki-immich ./desktop
+	CGO_ENABLED=0 GOOS=linux go build -o maki-immich ./desktop
 
 [group("desktop")]
 install:
@@ -51,4 +51,6 @@ start-desktop-mobile +args:
 
 [group("desktop-mobile")]
 build-desktop-mobile:
-	go build -o maki-immich-mobile ./mobile
+	CGO_ENABLED=1 GOOS=windows \
+	CXX=x86_64-w64-mingw32-g++ CC=x86_64-w64-mingw32-gcc \
+	go build -o maki-immich-mobile.exe ./mobile

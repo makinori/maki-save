@@ -1,0 +1,2 @@
+-   ffmpeg libs for windows
+    -   if no image cause fails, video icon doesnt show either

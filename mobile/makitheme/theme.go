@@ -33,7 +33,7 @@ var (
 )
 
 func (t *Theme) Color(name fyne.ThemeColorName, variant fyne.ThemeVariant) color.Color {
-	return theme.DefaultTheme().Color(name, variant)
+	return theme.DarkTheme().Color(name, variant)
 }
 
 var updateEmojiFontOnce sync.Once
@@ -65,9 +65,9 @@ func (t *Theme) Font(style fyne.TextStyle) fyne.Resource {
 }
 
 func (t *Theme) Icon(icon fyne.ThemeIconName) fyne.Resource {
-	return theme.DefaultTheme().Icon(icon)
+	return theme.DarkTheme().Icon(icon)
 }
 
 func (t *Theme) Size(size fyne.ThemeSizeName) float32 {
-	return theme.DefaultTheme().Size(size)
+	return theme.DarkTheme().Size(size)
 }

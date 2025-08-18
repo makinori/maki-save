@@ -1,12 +1,11 @@
 package ffmpeg
 
 import (
-	"embed"
+	"errors"
 	"fmt"
 	"io/fs"
 	"os"
 	"path"
-	"runtime"
 
 	"github.com/ebitengine/purego"
 )
@@ -58,11 +57,8 @@ var (
 var initialized = false
 
 var (
-	//go:embed arm64-v8a
-	androidLibs       embed.FS
-	androidLibsTmpDir string
-
-	handles = map[string]uintptr{}
+	libsTmpDir string
+	handles    = map[string]uintptr{}
 )
 
 func openLib(name string) (uintptr, error) {
@@ -71,9 +67,7 @@ func openLib(name string) (uintptr, error) {
 		return handle, nil
 	}
 
-	handle, err := purego.Dlopen(
-		path.Join(androidLibsTmpDir, name), purego.RTLD_LAZY,
-	)
+	handle, err := libOpen(path.Join(libsTmpDir, name))
 	if err != nil {
 		return 0, err
 	}
@@ -89,37 +83,40 @@ func initFFmpeg() error {
 	}
 	initialized = true
 
+	if libsFS == nil {
+		closeFfmpeg()
+		return errors.New("no embedded libraries")
+	}
+
 	// make tmp dir
 
-	if runtime.GOOS == "android" && runtime.GOARCH == "arm64" {
-		var err error
-		androidLibsTmpDir, err = os.MkdirTemp("", "ffmpeg")
+	var err error
+	libsTmpDir, err = os.MkdirTemp("", "ffmpeg")
+	if err != nil {
+		closeFfmpeg()
+		return err
+	}
+
+	fmt.Println("added tmp dir: " + libsTmpDir)
+
+	libs, _ := fs.ReadDir(libsFS, ".")
+	for _, lib := range libs {
+		if lib.IsDir() {
+			continue
+		}
+		data, _ := fs.ReadFile(libsFS, lib.Name())
+		os.WriteFile(path.Join(libsTmpDir, lib.Name()), data, 0755)
+	}
+
+	// preload libs. order matters
+
+	for _, name := range []string{
+		"libc++_shared.so", "libavutil.so", "libswresample.so", "libavcodec.so",
+	} {
+		_, err := openLib(name)
 		if err != nil {
 			closeFfmpeg()
 			return err
-		}
-
-		fmt.Println("added tmp dir: " + androidLibsTmpDir)
-
-		libs, _ := fs.ReadDir(androidLibs, "arm64-v8a")
-		for _, lib := range libs {
-			if lib.IsDir() {
-				continue
-			}
-			data, _ := fs.ReadFile(androidLibs, path.Join("arm64-v8a", lib.Name()))
-			os.WriteFile(path.Join(androidLibsTmpDir, lib.Name()), data, 0755)
-		}
-
-		// preload libs. order matters
-
-		for _, name := range []string{
-			"libc++_shared.so", "libavutil.so", "libswresample.so", "libavcodec.so",
-		} {
-			_, err := openLib(name)
-			if err != nil {
-				closeFfmpeg()
-				return err
-			}
 		}
 	}
 
@@ -186,14 +183,14 @@ func closeFfmpeg() {
 	}
 
 	for _, handle := range handles {
-		purego.Dlclose(handle)
+		libClose(handle)
 	}
 	handles = map[string]uintptr{}
 
-	if androidLibsTmpDir != "" {
-		os.RemoveAll(androidLibsTmpDir)
-		fmt.Println("removed tmp dir: " + androidLibsTmpDir)
-		androidLibsTmpDir = ""
+	if libsTmpDir != "" {
+		os.RemoveAll(libsTmpDir)
+		fmt.Println("removed tmp dir: " + libsTmpDir)
+		libsTmpDir = ""
 	}
 
 	initialized = false
