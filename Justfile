@@ -3,7 +3,7 @@ default:
 
 [group("desktop")]
 build:
-	CGO_ENABLED=0 GOOS=linux go build -o maki-immich ./desktop
+	CGO_ENABLED=0 go build -o maki-immich ./desktop
 
 [group("desktop")]
 install:
@@ -31,16 +31,24 @@ install:
 
 
 [group("android")]
-test-apk:
-	go run ./mobile 
+start-android:
+	INTENT_TEST=1 go run ./mobile 
 
 [group("android")]
 [working-directory("mobile")]
-build-apk:
+build-android:
 	go tool fyne package -os android -app-id cafe.maki.immich \
 	-icon icon.png -name "maki immich" -release
 	mv maki_immich.apk ../maki-immich.apk
 
 [group("android")]
-install-apk:
+install-android:
 	adb install maki-immich.apk
+
+[group("desktop-mobile")]
+start-desktop-mobile +args:
+	go run ./mobile {{args}}
+
+[group("desktop-mobile")]
+build-desktop-mobile:
+	go build -o maki-immich-mobile ./mobile

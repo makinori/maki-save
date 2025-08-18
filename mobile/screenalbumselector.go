@@ -176,7 +176,11 @@ func showScreenAlbumSelector() bool {
 				box.Objects[0] = container.NewCenter(uploadingLabel)
 			})
 
-			messages := immich.UploadFiles(albums[i], currentFiles)
+			// reverse so it appears in the same order when uploaded
+			currentFilesReversed := currentFiles
+			slices.Reverse(currentFilesReversed)
+
+			messages := immich.UploadFiles(albums[i], currentFilesReversed)
 
 			fyne.Do(func() {
 				uploadingLabel.SetText("")
