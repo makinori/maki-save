@@ -5,7 +5,7 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
-	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/makinori/maki-immich/immich"
@@ -99,7 +99,7 @@ func main() {
 		data, err := os.ReadFile(filePath)
 		files[i] = &immich.File{
 			Data: data,
-			Name: path.Base(filePath),
+			Name: filepath.Base(filePath),
 			Err:  err,
 		}
 	}

@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"path/filepath"
 	"runtime"
 	"slices"
 	"strings"
@@ -33,6 +34,8 @@ var (
 	currentFilesChanged chan struct{}
 
 	fetchingText binding.String
+
+	usingDesktop = runtime.GOOS != "android"
 )
 
 const (
@@ -129,7 +132,14 @@ func handleMediaIntent() {
 				return
 			}
 
-			filename := path.Base(uri)
+			var filename string
+			if usingDesktop {
+				filename = filepath.Base(uri)
+			} else {
+				// dealing with urls so only use /
+				filename = path.Base(uri)
+			}
+
 			unescapedFilename, err := url.PathUnescape(filename)
 			if err == nil {
 				filename = unescapedFilename
@@ -216,7 +226,7 @@ func main() {
 
 	window = fyneApp.NewWindow("maki immich")
 
-	if runtime.GOOS != "android" {
+	if usingDesktop {
 		window.Resize(fyne.Size{
 			Width:  400,
 			Height: 700,

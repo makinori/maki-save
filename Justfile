@@ -53,4 +53,4 @@ start-desktop-mobile +args:
 build-desktop-mobile:
 	CGO_ENABLED=1 GOOS=windows \
 	CXX=x86_64-w64-mingw32-g++ CC=x86_64-w64-mingw32-gcc \
-	go build -o maki-immich-mobile.exe ./mobile
+	go build -ldflags -H=windowsgui -o maki-immich-mobile.exe ./mobile

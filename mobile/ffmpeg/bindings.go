@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
-	"path"
+	"path/filepath"
 
 	"github.com/ebitengine/purego"
 )
@@ -67,7 +67,7 @@ func openLib(name string) (uintptr, error) {
 		return handle, nil
 	}
 
-	handle, err := libOpen(path.Join(libsTmpDir, name))
+	handle, err := libOpen(filepath.Join(libsTmpDir, name))
 	if err != nil {
 		return 0, err
 	}
@@ -105,7 +105,7 @@ func initFFmpeg() error {
 			continue
 		}
 		data, _ := fs.ReadFile(libsFS, lib.Name())
-		os.WriteFile(path.Join(libsTmpDir, lib.Name()), data, 0755)
+		os.WriteFile(filepath.Join(libsTmpDir, lib.Name()), data, 0755)
 	}
 
 	// preload libs. order matters
