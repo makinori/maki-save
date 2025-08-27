@@ -16,24 +16,24 @@ import (
 // thank you so much https://github.com/dylanpdx/BetterTwitFix
 // please please please donate at https://ko-fi.com/dylanpdx
 
-type VXTwitterMediaType string
+type vxTwitterMediaType string
 
 const (
-	VXTwitterMediaTypeVideo VXTwitterMediaType = "video"
-	VXTwitterMediaTypeImage VXTwitterMediaType = "image"
-	VXTwitterMediaTypeGIF   VXTwitterMediaType = "gif"
+	vxTwitterMediaTypeVideo vxTwitterMediaType = "video"
+	vxTwitterMediaTypeImage vxTwitterMediaType = "image"
+	vxTwitterMediaTypeGIF   vxTwitterMediaType = "gif"
 )
 
-type VXTwitterMedia struct {
+type vxTwitterMedia struct {
 	ThumbnailURL string             `json:"thumbnail_url"`
-	Type         VXTwitterMediaType `json:"type"`
+	Type         vxTwitterMediaType `json:"type"`
 	URL          string             `json:"url"`
 }
 
-type VXTwitterTweet struct {
-	Media        []VXTwitterMedia `json:"media_extended"`
+type vxTwitterTweet struct {
+	Media        []vxTwitterMedia `json:"media_extended"`
 	QuoteRetweet *struct {
-		Media []VXTwitterMedia `json:"media_extended"`
+		Media []vxTwitterMedia `json:"media_extended"`
 		ID    string           `json:"tweetID"`
 		// DisplayName string `json:"user_name"`
 		Username string `json:"user_screen_name"`
@@ -62,7 +62,7 @@ func vxTwitterImageURL(inputURL string) string {
 }
 
 func vxTwitterProcessMedia(
-	tweetID string, username string, tweetMedia []VXTwitterMedia,
+	tweetID string, username string, tweetMedia []vxTwitterMedia,
 	outputFiles []immich.File,
 ) {
 	fileURLs := make([]string, len(tweetMedia))
@@ -70,9 +70,9 @@ func vxTwitterProcessMedia(
 
 	for i, media := range tweetMedia {
 		switch media.Type {
-		case VXTwitterMediaTypeImage:
+		case vxTwitterMediaTypeImage:
 			fileURLs[i] = vxTwitterImageURL(media.URL)
-		case VXTwitterMediaTypeVideo, VXTwitterMediaTypeGIF:
+		case vxTwitterMediaTypeVideo, vxTwitterMediaTypeGIF:
 			fileURLs[i] = media.URL
 			thumbnailURLs[i] = vxTwitterImageURL(media.ThumbnailURL)
 		}
@@ -84,7 +84,7 @@ func vxTwitterProcessMedia(
 	))
 }
 
-func VXTwitter(url *url.URL) ([]immich.File, error) {
+func vxTwitter(url *url.URL) ([]immich.File, error) {
 	twitterPathMatches := twitterPathRegexp.FindStringSubmatch(url.Path)
 	if len(twitterPathMatches) == 0 {
 		return []immich.File{}, errors.New("failed to match username and id from url")
@@ -105,7 +105,7 @@ func VXTwitter(url *url.URL) ([]immich.File, error) {
 		return []immich.File{}, err
 	}
 
-	tweet := VXTwitterTweet{}
+	tweet := vxTwitterTweet{}
 	err = json.Unmarshal(jsonData, &tweet)
 	if err != nil {
 		return []immich.File{}, err

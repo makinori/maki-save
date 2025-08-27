@@ -42,7 +42,7 @@ func GetIntent() Intent {
 			C.uintptr_t(android.Ctx),
 		)
 
-		intent.Action = C.GoString(output.action)
+		intent.Action = Action(C.GoString(output.action))
 		intent.Type = C.GoString(output._type)
 
 		uris := unsafe.Slice(output.uri, output.uris)

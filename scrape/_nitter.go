@@ -61,7 +61,7 @@ func nitterImageURL(escapedPath string) (string, error) {
 
 }
 
-func Nitter(inputURL *url.URL) ([]immich.File, error) {
+func nitter(inputURL *url.URL) ([]immich.File, error) {
 	twitterPathMatches := twitterPathRegexp.FindStringSubmatch(inputURL.Path)
 	if len(twitterPathMatches) == 0 {
 		return []immich.File{}, errors.New("failed to match username and id from url")

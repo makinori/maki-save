@@ -23,6 +23,7 @@ import (
 	"github.com/makinori/maki-immich/mobile/ffmpeg"
 	"github.com/makinori/maki-immich/mobile/makitheme"
 	"github.com/makinori/maki-immich/scrape"
+	"mvdan.cc/xurls/v2"
 )
 
 var (
@@ -44,7 +45,7 @@ const (
 
 func showUnknownIntent() {
 	lines := []string{
-		"action: " + currentIntent.Action,
+		"action: " + string(currentIntent.Action),
 		"type: " + currentIntent.Type,
 	}
 	if len(currentIntent.URI) == 0 {
@@ -65,7 +66,15 @@ func setFetchingText(from string) {
 }
 
 func handleTextIntent() {
-	intentURL, err := url.Parse(currentIntent.Text)
+	foundURL := xurls.Relaxed().FindString(currentIntent.Text)
+	if foundURL == "" {
+		showScreenError(ScreenError{Text: []string{
+			"failed to find url",
+		}})
+		return
+	}
+
+	intentURL, err := url.Parse(foundURL)
 	if err != nil {
 		showScreenError(ScreenError{Text: []string{
 			"failed to parse url", err.Error(),
@@ -104,7 +113,10 @@ func handleTextIntent() {
 		return true
 	}
 
-	if tryScrape("twitter", scrape.TwitterHosts, scrape.VXTwitter) {
+	switch {
+	case
+		tryScrape("twitter", scrape.TwitterHosts, scrape.Twitter),
+		tryScrape("poshmark", scrape.PoshmarkHosts, scrape.Poshmark):
 		return
 	}
 
@@ -183,9 +195,7 @@ func loop() {
 
 	intent := android.GetIntent()
 
-	if intent.Action != android.ACTION_SEND &&
-		intent.Action != android.ACTION_SEND_MULTIPLE {
-
+	if !slices.Contains(android.Actions, intent.Action) {
 		if !showingIntroScreen {
 			showScreenError(ScreenError{
 				Text: []string{
@@ -196,7 +206,6 @@ func loop() {
 			})
 			showingIntroScreen = true
 		}
-
 		return
 	}
 
@@ -206,16 +215,17 @@ func loop() {
 	fetchingText = binding.NewString()
 	fetchingText.Set("loading...")
 
-	switch strings.SplitN(intent.Type, "/", 2)[0] {
-	case "text":
-		if showScreenAlbumSelector() {
-			go handleTextIntent()
-		}
-	case "image", "video":
+	intentType := strings.SplitN(intent.Type, "/", 2)[0]
+
+	if intentType == "image" || intentType == "video" {
 		if showScreenAlbumSelector() {
 			go handleMediaIntent()
 		}
-	default:
+	} else if intentType == "text" || intent.Action == android.ACTION_SENDTO {
+		if showScreenAlbumSelector() {
+			go handleTextIntent()
+		}
+	} else {
 		showUnknownIntent()
 	}
 }

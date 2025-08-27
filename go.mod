@@ -8,6 +8,7 @@ require (
 	github.com/forPelevin/gomoji v1.3.1
 	github.com/rivo/uniseg v0.4.7
 	golang.org/x/sync v0.16.0
+	mvdan.cc/xurls/v2 v2.6.0
 )
 
 tool fyne.io/tools/cmd/fyne
