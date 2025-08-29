@@ -30,6 +30,7 @@ func GetIntent() Intent {
 		return Intent{
 			Action: ACTION_SENDTO,
 			Text:   "hi there,\nthis is a test url https://posh.mk/rLZ4pGHLaWb\nbye now",
+			// Text: "https://posh.mk/l9ZJ5hR7bWb", // has video
 		}
 	}
 

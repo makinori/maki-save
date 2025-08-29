@@ -5,9 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"net/http"
 	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/makinori/maki-immich/immich"
@@ -60,6 +62,14 @@ type poshmarkInitialState struct {
 				URLLarge string `json:"url_large"`
 				// URLLargeWebP string `json:"url_large_webp"`
 			} `json:"pictures"`
+			Videos []struct {
+				Media struct {
+					VideoMediaContent map[string]string `json:"video_media_content"`
+					ThumbnailContent  struct {
+						URLLarge string `json:"url_large"`
+					} `json:"thumbnail_content"`
+				} `json:"media"`
+			} `json:"Videos"`
 		} `json:"listingDetails"`
 		ListerData struct {
 			// ID       string `json:"id"`
@@ -67,6 +77,8 @@ type poshmarkInitialState struct {
 		} `json:"listerData"`
 	} `json:"$_listing_details"`
 }
+
+var allButNumbersRegexp = regexp.MustCompile(`[^0-9]`)
 
 func Poshmark(url *url.URL) ([]immich.File, error) {
 	if url.Host == "posh.mk" {
@@ -113,12 +125,39 @@ func Poshmark(url *url.URL) ([]immich.File, error) {
 	listerData := &initialState.ListingDetails.ListerData
 	listingDetails := &initialState.ListingDetails.ListingDetails
 
-	fileURLs := make([]string, 1+len(listingDetails.Pictures))
-	thumbnailURLs := make([]string, 1+len(listingDetails.Pictures))
+	mediaLength := 1 + len(listingDetails.Videos) + len(listingDetails.Pictures)
+	fileURLs := make([]string, mediaLength)
+	thumbnailURLs := make([]string, mediaLength)
 
-	fileURLs[0] = listingDetails.CoverShot.URLLarge
-	for i, picture := range listingDetails.Pictures {
-		fileURLs[1+i] = picture.URLLarge
+	i := 0
+
+	fileURLs[i] = listingDetails.CoverShot.URLLarge
+	i++
+
+	for _, video := range listingDetails.Videos {
+		biggestQuality := 0
+		biggestQualityKey := ""
+
+		qualityKeys := maps.Keys(video.Media.VideoMediaContent)
+		for qualityKey := range qualityKeys {
+			quality, _ := strconv.Atoi(
+				allButNumbersRegexp.ReplaceAllString(qualityKey, ""),
+			)
+			if quality > biggestQuality {
+				biggestQuality = quality
+				biggestQualityKey = qualityKey
+			}
+		}
+
+		fileURLs[i] = video.Media.VideoMediaContent[biggestQualityKey]
+		thumbnailURLs[i] = video.Media.ThumbnailContent.URLLarge
+
+		i++
+	}
+
+	for _, picture := range listingDetails.Pictures {
+		fileURLs[i] = picture.URLLarge
+		i++
 	}
 
 	return getFilesFromURLs(
