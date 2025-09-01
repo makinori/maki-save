@@ -12,21 +12,21 @@ import (
 type Theme struct{}
 
 var (
-	//go:embed MakiLibertinusMono-Regular.ttf
+	//go:embed MapleMonoNL-Regular.ttf
 	fontRegularData []byte
-	fontRegular     = fyne.NewStaticResource("MakiLibertinusMono-Regular.ttf", fontRegularData)
+	fontRegular     = fyne.NewStaticResource("MapleMonoNL-Regular.ttf", fontRegularData)
 
-	//go:embed MakiLibertinusMono-RegularItalic.ttf
+	//go:embed MapleMonoNL-Italic.ttf
 	fontRegularItalicData []byte
-	fontRegularItalic     = fyne.NewStaticResource("MakiLibertinusMono-RegularItalic.ttf", fontRegularItalicData)
+	fontRegularItalic     = fyne.NewStaticResource("MapleMonoNL-Italic.ttf", fontRegularItalicData)
 
-	//go:embed MakiLibertinusMono-Bold.ttf
+	//go:embed MapleMonoNL-Bold.ttf
 	fontBoldData []byte
-	fontBold     = fyne.NewStaticResource("MakiLibertinusMono-Bold.ttf", fontBoldData)
+	fontBold     = fyne.NewStaticResource("MapleMonoNL-Bold.ttf", fontBoldData)
 
-	//go:embed MakiLibertinusMono-BoldItalic.ttf
+	//go:embed MapleMonoNL-BoldItalic.ttf
 	fontBoldItalicData []byte
-	fontBoldItalic     = fyne.NewStaticResource("MakiLibertinusMono-BoldItalic.ttf", fontBoldItalicData)
+	fontBoldItalic     = fyne.NewStaticResource("MapleMonoNL-BoldItalic.ttf", fontBoldItalicData)
 
 	//go:embed NotoColorEmoji.ttf
 	fontNotoColorEmojiData []byte
@@ -41,7 +41,7 @@ var updateEmojiFontOnce sync.Once
 func (t *Theme) Font(style fyne.TextStyle) fyne.Resource {
 	updateEmojiFontOnce.Do(func() {
 		// default emoji font is old and outdated. replace with custom font.
-		// unfortunately can't use `-tags no_emoji`` or below will return nil.
+		// unfortunately can't use `-tags no_emoji` or below will return nil.
 		font, ok := theme.DefaultEmojiFont().(*fyne.StaticResource)
 		if ok {
 			font.StaticName = "NotoColorEmoji.ttf"
