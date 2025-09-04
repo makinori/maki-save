@@ -58,7 +58,8 @@ type poshmarkInitialState struct {
 				URLLarge string `json:"url_large"`
 				// URLLargeWebP string `json:"url_large_webp"`
 			} `json:"cover_shot"`
-			Pictures []struct {
+			Description string `json:"description"`
+			Pictures    []struct {
 				URLLarge string `json:"url_large"`
 				// URLLargeWebP string `json:"url_large_webp"`
 			} `json:"pictures"`
@@ -70,6 +71,12 @@ type poshmarkInitialState struct {
 					} `json:"thumbnail_content"`
 				} `json:"media"`
 			} `json:"Videos"`
+			Title   string `json:"title"`
+			Size    string `json:"size"`
+			SizeObj struct {
+				DisplayWithSizeSystem string `json:"display_with_size_system"`
+				// b string `json:"display_with_system_and_set"`
+			} `json:"size_obj"`
 		} `json:"listingDetails"`
 		ListerData struct {
 			// ID       string `json:"id"`
@@ -160,8 +167,23 @@ func Poshmark(url *url.URL) ([]immich.File, error) {
 		i++
 	}
 
-	return getFilesFromURLs(
+	description := fmt.Sprintf(
+		"%s\nSize %s\n%s",
+		listingDetails.Title,
+		listingDetails.SizeObj.DisplayWithSizeSystem,
+		listingDetails.Description,
+	)
+
+	// fmt.Println(description)
+
+	files := getFilesFromURLs(
 		fmt.Sprintf("%s-%s-", listerData.Username, listingDetails.ID),
 		fileURLs, thumbnailURLs,
-	), nil
+	)
+
+	for i := range files {
+		files[i].Description = description
+	}
+
+	return files, nil
 }

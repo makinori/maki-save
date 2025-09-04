@@ -198,11 +198,20 @@ func uploadAsset(data []byte, filename string, dateStr string) (string, error) {
 	return action.Id, nil
 }
 
-func updateAssetDate(assetId string, dateStr string) error {
-	data, err := json.Marshal(map[string]any{
-		"ids":              []string{assetId},
-		"dateTimeOriginal": dateStr,
-	})
+func updateAsset(assetId string, dateStr string, description string) error {
+	dataMap := map[string]any{
+		"ids": []string{assetId},
+	}
+
+	if dateStr != "" {
+		dataMap["dateTimeOriginal"] = dateStr
+	}
+
+	if description != "" {
+		dataMap["description"] = description
+	}
+
+	data, err := json.Marshal(dataMap)
 
 	if err != nil {
 		return err
@@ -294,10 +303,11 @@ func addToAlbum(albumId string, assetId string) error {
 }
 
 type File struct {
-	Data      []byte
-	Name      string
-	Err       error  // if failed to read
-	Thumbnail []byte // for rendering ui
+	Data        []byte
+	Name        string
+	Err         error  // if failed to read
+	Thumbnail   []byte // for rendering ui
+	Description string
 }
 
 var mediaContentTypeFileExts = map[string][]string{
@@ -371,7 +381,7 @@ func UploadFile(album Album, file *File, date time.Time) error {
 
 	// ignore error but do retry a few times just incase
 	retryNoFailNoOutput(3, time.Millisecond*500, func() error {
-		return updateAssetDate(assetId, fileDateStr)
+		return updateAsset(assetId, fileDateStr, file.Description)
 	})
 
 	return nil
