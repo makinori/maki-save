@@ -50,25 +50,34 @@ func poshmarkHandleRedirect(url *url.URL) (*url.URL, error) {
 
 var poshmarkInitialStateJSONRegexp = regexp.MustCompile(`window.__INITIAL_STATE__=({.*});`)
 
+type poshmarkPicture struct {
+	URLLarge  string `json:"url_large"`
+	URLMedium string `json:"url"`
+	URLSmall  string `json:"url_small"`
+	// URLLargeWebP string `json: "url_large_webp"`
+}
+
+func (picture *poshmarkPicture) getLargest() string {
+	if picture.URLLarge != "" {
+		return picture.URLLarge
+	}
+	if picture.URLMedium != "" {
+		return picture.URLMedium
+	}
+	return picture.URLSmall
+}
+
 type poshmarkInitialState struct {
 	ListingDetails struct {
 		ListingDetails struct {
-			ID        string `json:"id"`
-			CoverShot struct {
-				URLLarge string `json:"url_large"`
-				// URLLargeWebP string `json:"url_large_webp"`
-			} `json:"cover_shot"`
-			Description string `json:"description"`
-			Pictures    []struct {
-				URLLarge string `json:"url_large"`
-				// URLLargeWebP string `json:"url_large_webp"`
-			} `json:"pictures"`
-			Videos []struct {
+			ID          string            `json:"id"`
+			CoverShot   poshmarkPicture   `json:"cover_shot"`
+			Description string            `json:"description"`
+			Pictures    []poshmarkPicture `json:"pictures"`
+			Videos      []struct {
 				Media struct {
 					VideoMediaContent map[string]string `json:"video_media_content"`
-					ThumbnailContent  struct {
-						URLLarge string `json:"url_large"`
-					} `json:"thumbnail_content"`
+					ThumbnailContent  poshmarkPicture   `json:"thumbnail_content"`
 				} `json:"media"`
 			} `json:"Videos"`
 			Title   string `json:"title"`
@@ -139,7 +148,7 @@ func Poshmark(url *url.URL) ([]immich.File, error) {
 
 	i := 0
 
-	fileURLs[i] = listingDetails.CoverShot.URLLarge
+	fileURLs[i] = listingDetails.CoverShot.getLargest()
 	i++
 
 	for _, video := range listingDetails.Videos {
@@ -158,13 +167,13 @@ func Poshmark(url *url.URL) ([]immich.File, error) {
 		}
 
 		fileURLs[i] = video.Media.VideoMediaContent[biggestQualityKey]
-		thumbnailURLs[i] = video.Media.ThumbnailContent.URLLarge
+		thumbnailURLs[i] = video.Media.ThumbnailContent.getLargest()
 
 		i++
 	}
 
 	for _, picture := range listingDetails.Pictures {
-		fileURLs[i] = picture.URLLarge
+		fileURLs[i] = picture.getLargest()
 		i++
 	}
 

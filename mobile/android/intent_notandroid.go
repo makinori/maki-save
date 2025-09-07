@@ -31,7 +31,8 @@ func GetIntent() Intent {
 			Action: ACTION_SENDTO,
 			// Text:   "hi there,\nthis is a test url https://posh.mk/rLZ4pGHLaWb\nbye now",
 			// Text: "https://posh.mk/l9ZJ5hR7bWb", // has video
-			Text: "https://posh.mk/aOxv4li5sWb", // sold item
+			// Text: "https://posh.mk/aOxv4li5sWb", // sold item
+			Text: "https://posh.mk/lXoDoOrDsWb", // large images missing
 		}
 	}
 
