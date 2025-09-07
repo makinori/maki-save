@@ -104,9 +104,10 @@ func Poshmark(url *url.URL) ([]immich.File, error) {
 	}
 	defer htmlRes.Body.Close()
 
-	if htmlRes.StatusCode != 200 {
-		return nil, fmt.Errorf("%d: %s", htmlRes.StatusCode, htmlRes.Status)
-	}
+	// sold items are 404
+	// if htmlRes.StatusCode != 200 {
+	// 	return nil, fmt.Errorf("%d: %s", htmlRes.StatusCode, htmlRes.Status)
+	// }
 
 	html, err := io.ReadAll(htmlRes.Body)
 	if err != nil {
