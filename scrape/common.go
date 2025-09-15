@@ -88,6 +88,7 @@ func getFilesFromURLs(
 }
 
 func Test(scrapeURL *url.URL) (string, ScrapeFn) {
+	var extraData []byte
 	switch {
 	case TestTwitter(scrapeURL):
 		return "Twitter", Twitter
@@ -95,8 +96,10 @@ func Test(scrapeURL *url.URL) (string, ScrapeFn) {
 		return "Poshmark", Poshmark
 	case TestBluesky(scrapeURL):
 		return "Bluesky", Bluesky
-	case TestMastodon(scrapeURL):
-		return "Mastodon", Mastodon
+	case TestActivityPub(scrapeURL, &extraData):
+		return "ActivityPub", func(url *url.URL) ([]immich.File, error) {
+			return ActivityPub(url, &extraData)
+		}
 	}
 	return "", func(url *url.URL) ([]immich.File, error) {
 		return []immich.File{}, errors.New("no scrape function")
