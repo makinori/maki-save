@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -16,9 +17,13 @@ import (
 	"mvdan.cc/xurls/v2"
 )
 
-var PoshmarkHosts = []string{
+var poshmarkHosts = []string{
 	"posh.mk",
 	"poshmark.com",
+}
+
+func TestPoshmark(url *url.URL) bool {
+	return slices.Contains(poshmarkHosts, url.Host)
 }
 
 func poshmarkHandleRedirect(url *url.URL) (*url.URL, error) {

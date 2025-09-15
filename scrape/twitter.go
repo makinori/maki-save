@@ -3,12 +3,13 @@ package scrape
 import (
 	"net/url"
 	"regexp"
+	"slices"
 
 	"github.com/makinori/maki-immich/immich"
 )
 
 var (
-	TwitterHosts = []string{
+	twitterHosts = []string{
 		"twitter.com",
 		"x.com",
 		"nitter.net",
@@ -46,6 +47,10 @@ func twitterImageURL(inputURL string) string {
 	return imageURL.String()
 }
 */
+
+func TestTwitter(url *url.URL) bool {
+	return slices.Contains(twitterHosts, url.Host)
+}
 
 func Twitter(url *url.URL) ([]immich.File, error) {
 	return vxTwitter(url)

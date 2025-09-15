@@ -27,12 +27,18 @@ func GetIntent() Intent {
 		// 		"/home/maki/Videos/worm.webm",
 		// 	},
 		// }
+		// return Intent{
+		// 	Action: ACTION_SENDTO,
+		// 	// Text:   "hi there,\nthis is a test url https://posh.mk/rLZ4pGHLaWb\nbye now",
+		// 	// Text: "https://posh.mk/l9ZJ5hR7bWb", // has video
+		// 	// Text: "https://posh.mk/aOxv4li5sWb", // sold item
+		// 	Text: "https://posh.mk/lXoDoOrDsWb", // large images missing
+		// }
 		return Intent{
 			Action: ACTION_SENDTO,
-			// Text:   "hi there,\nthis is a test url https://posh.mk/rLZ4pGHLaWb\nbye now",
-			// Text: "https://posh.mk/l9ZJ5hR7bWb", // has video
-			// Text: "https://posh.mk/aOxv4li5sWb", // sold item
-			Text: "https://posh.mk/lXoDoOrDsWb", // large images missing
+			Text:   "https://mastodon.hotmilk.space/@maki/113338487636859072",
+			// Text: "https://mastodon.hotmilk.space/@maki/113172074826912415", // video
+			// Text: "https://mastodon.hotmilk.space/@maki/114674021457567710", // gif
 		}
 	}
 

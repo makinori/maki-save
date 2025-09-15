@@ -1,2 +1,4 @@
 -   ffmpeg libs for windows
     -   if no image cause fails, video icon doesnt show either
+-   allow selecting album early
+-   format long text better in screenerror.go

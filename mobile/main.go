@@ -83,10 +83,10 @@ func handleTextIntent() {
 	}
 
 	tryScrape := func(
-		name string, hosts []string,
+		name string, testFn func(url *url.URL) bool,
 		scrapeFn func(url *url.URL) ([]immich.File, error),
 	) bool {
-		if !slices.Contains(hosts, intentURL.Host) {
+		if !testFn(intentURL) {
 			return false
 		}
 
@@ -113,10 +113,9 @@ func handleTextIntent() {
 		return true
 	}
 
-	switch {
-	case
-		tryScrape("twitter", scrape.TwitterHosts, scrape.Twitter),
-		tryScrape("poshmark", scrape.PoshmarkHosts, scrape.Poshmark):
+	if tryScrape("twitter", scrape.TestTwitter, scrape.Twitter) ||
+		tryScrape("poshmark", scrape.TestPoshmark, scrape.Poshmark) ||
+		tryScrape("mastodon", scrape.TestMastodon, scrape.Mastodon) {
 		return
 	}
 

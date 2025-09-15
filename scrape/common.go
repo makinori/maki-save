@@ -11,6 +11,8 @@ import (
 	"github.com/makinori/maki-immich/immich"
 )
 
+// TODO: outsource logic from android main here
+
 var (
 	cleanUpExt = regexp.MustCompile(`(?i)[^\.a-z0-9].*$`)
 )
