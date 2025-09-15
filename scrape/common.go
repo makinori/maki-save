@@ -1,8 +1,10 @@
 package scrape
 
 import (
+	"errors"
 	"fmt"
 	"io"
+	"mime"
 	"net/http"
 	"net/url"
 	"path"
@@ -31,11 +33,6 @@ func getFilesFromURLs(
 		go func() {
 			defer wg.Done()
 
-			ext := path.Ext(imageURL)
-			ext = cleanUpExt.ReplaceAllString(ext, "")
-
-			files[i].Name = fmt.Sprintf("%s%02d%s", prefix, i+1, ext)
-
 			{
 				res, err := http.Get(imageURL)
 				if err != nil {
@@ -50,6 +47,19 @@ func getFilesFromURLs(
 					return
 				}
 			}
+
+			ext := path.Ext(imageURL)
+			ext = cleanUpExt.ReplaceAllString(ext, "")
+
+			if ext == "" {
+				contentType := http.DetectContentType(files[i].Data)
+				exts, _ := mime.ExtensionsByType(contentType)
+				if len(exts) > 0 {
+					ext = exts[len(exts)-1]
+				}
+			}
+
+			files[i].Name = fmt.Sprintf("%s%02d%s", prefix, i+1, ext)
 
 			thumbnailURL := thumbnailURLs[i]
 			if thumbnailURL == "" {
@@ -83,10 +93,12 @@ func Test(scrapeURL *url.URL) (string, ScrapeFn) {
 		return "Twitter", Twitter
 	case TestPoshmark(scrapeURL):
 		return "Poshmark", Poshmark
+	case TestBluesky(scrapeURL):
+		return "Bluesky", Bluesky
 	case TestMastodon(scrapeURL):
 		return "Mastodon", Mastodon
 	}
 	return "", func(url *url.URL) ([]immich.File, error) {
-		return []immich.File{}, nil
+		return []immich.File{}, errors.New("no scrape function")
 	}
 }

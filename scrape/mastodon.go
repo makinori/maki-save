@@ -13,11 +13,11 @@ import (
 )
 
 var (
-	mastodonUrlRegexp = regexp.MustCompile(`^https?:\/\/[^/]+\/@([^/]+)\/([0-9]{15,19})`)
+	mastodonURLRegexp = regexp.MustCompile(`^https?:\/\/[^/]+\/@([^/]+)\/([0-9]{15,19})`)
 )
 
 func TestMastodon(url *url.URL) bool {
-	return mastodonUrlRegexp.MatchString(url.String())
+	return mastodonURLRegexp.MatchString(url.String())
 }
 
 type mastodonInstance struct {
@@ -37,7 +37,7 @@ type mastodonStatus struct {
 }
 
 func Mastodon(url *url.URL) ([]immich.File, error) {
-	matches := mastodonUrlRegexp.FindStringSubmatch(url.String())
+	matches := mastodonURLRegexp.FindStringSubmatch(url.String())
 	if len(matches) == 0 {
 		return []immich.File{}, errors.New("no matches found in url")
 	}
