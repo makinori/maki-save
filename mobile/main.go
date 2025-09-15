@@ -82,46 +82,33 @@ func handleTextIntent() {
 		return
 	}
 
-	tryScrape := func(
-		name string, testFn func(url *url.URL) bool,
-		scrapeFn func(url *url.URL) ([]immich.File, error),
-	) bool {
-		if !testFn(intentURL) {
-			return false
-		}
-
-		setFetchingText(name)
-
-		files, err := scrapeFn(intentURL)
-		if err == nil && len(files) == 0 {
-			err = errors.New("no images")
-		}
-		if err != nil {
-			showScreenError(ScreenError{Text: []string{
-				"failed to retrieve", err.Error(),
-			}})
-			return true
-		}
-
-		currentFiles = make([]*immich.File, len(files))
-		for i, file := range files {
-			currentFiles[i] = &file
-		}
-
-		currentFilesChanged <- struct{}{}
-
-		return true
-	}
-
-	if tryScrape("twitter", scrape.TestTwitter, scrape.Twitter) ||
-		tryScrape("poshmark", scrape.TestPoshmark, scrape.Poshmark) ||
-		tryScrape("mastodon", scrape.TestMastodon, scrape.Mastodon) {
+	name, scrapeFn := scrape.Test(intentURL)
+	if name == "" {
+		showScreenError(ScreenError{Text: []string{
+			"unknown url", intentURL.String(),
+		}})
 		return
 	}
 
-	showScreenError(ScreenError{Text: []string{
-		"unknown url", intentURL.String(),
-	}})
+	setFetchingText(strings.ToLower(name))
+
+	files, err := scrapeFn(intentURL)
+	if err == nil && len(files) == 0 {
+		err = errors.New("no images")
+	}
+	if err != nil {
+		showScreenError(ScreenError{Text: []string{
+			"failed to retrieve", err.Error(),
+		}})
+		return
+	}
+
+	currentFiles = make([]*immich.File, len(files))
+	for i, file := range files {
+		currentFiles[i] = &file
+	}
+
+	currentFilesChanged <- struct{}{}
 }
 
 func handleMediaIntent() {

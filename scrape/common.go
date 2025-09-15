@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"path"
 	"regexp"
 	"sync"
@@ -11,11 +12,13 @@ import (
 	"github.com/makinori/maki-immich/immich"
 )
 
-// TODO: outsource logic from android main here
-
 var (
 	cleanUpExt = regexp.MustCompile(`(?i)[^\.a-z0-9].*$`)
 )
+
+type TestFn func(url *url.URL) bool
+
+type ScrapeFn func(url *url.URL) ([]immich.File, error)
 
 func getFilesFromURLs(
 	prefix string, fileURLs []string, thumbnailURLs []string,
@@ -72,4 +75,18 @@ func getFilesFromURLs(
 	wg.Wait()
 
 	return files
+}
+
+func Test(scrapeURL *url.URL) (string, ScrapeFn) {
+	switch {
+	case TestTwitter(scrapeURL):
+		return "Twitter", Twitter
+	case TestPoshmark(scrapeURL):
+		return "Poshmark", Poshmark
+	case TestMastodon(scrapeURL):
+		return "Mastodon", Mastodon
+	}
+	return "", func(url *url.URL) ([]immich.File, error) {
+		return []immich.File{}, nil
+	}
 }
