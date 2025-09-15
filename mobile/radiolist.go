@@ -40,8 +40,7 @@ func splitByEmoji(input string) []string {
 }
 
 func radioList(
-	options []string, disableSelect binding.Bool,
-	onSelect *func(int), onCancel func(),
+	options []string, onSelect *func(int), onCancel func(),
 ) *fyne.Container {
 	var selected int
 
@@ -84,18 +83,18 @@ func radioList(
 			selectButton.Disable()
 			return
 		}
-		b, _ := disableSelect.Get()
-		if b {
-			selectButton.Disable()
-			return
-		}
+		// b, _ := disableSelect.Get()
+		// if b {
+		// 	selectButton.Disable()
+		// 	return
+		// }
 		selectButton.Enable()
 	}
 
 	updateSelectButton()
 
 	hasSelected.AddListener(binding.NewDataListener(updateSelectButton))
-	disableSelect.AddListener(binding.NewDataListener(updateSelectButton))
+	// disableSelect.AddListener(binding.NewDataListener(updateSelectButton))
 
 	// fyne removes spaces after emojis in instance of: <emoji><space>text
 	// so prepare multiple segments i guess

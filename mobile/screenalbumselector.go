@@ -13,7 +13,6 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
-	"fyne.io/fyne/v2/data/binding"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/makinori/maki-immich/immich"
@@ -153,66 +152,72 @@ func showScreenAlbumSelector() bool {
 		albumNames[i] = album.AlbumName
 	}
 
-	albumDisableSelect := binding.NewBool()
+	// albumDisableSelect := binding.NewBool()
 
 	var onAlbumSelected func(i int)
 
 	albumRadioList := radioList(
 		albumNames,
-		albumDisableSelect,
+		// albumDisableSelect,
 		&onAlbumSelected,
 		func() {
 			os.Exit(0)
 		},
 	)
 
-	uploadingLabel := widget.NewLabel("uploading...")
-
 	var box *fyne.Container
 
-	onAlbumSelected = func(i int) {
-		go func() {
-			fyne.Do(func() {
-				box.Objects[0] = container.NewCenter(uploadingLabel)
+	uploading := false
+	selectedAlbumIndex := -1
+
+	uploadNow := func() {
+		if uploading || selectedAlbumIndex < 0 {
+			return
+		}
+
+		uploading = true
+
+		// reverse so it appears in the same order when uploaded
+		currentFilesReversed := currentFiles
+		slices.Reverse(currentFilesReversed)
+
+		messages := immich.UploadFiles(
+			albums[selectedAlbumIndex], currentFilesReversed,
+		)
+
+		fyne.Do(func() {
+			// infoDialog := dialog.NewInformation("Info", info, window)
+			// infoDialog.SetOnClosed(func() {
+			// 	os.Exit(0)
+			// })
+			// infoDialog.Show()
+
+			messages[0] = "#" + messages[0]
+			showScreenError(ScreenError{
+				Text: messages,
+				// we want it to self destruct
 			})
-
-			// reverse so it appears in the same order when uploaded
-			currentFilesReversed := currentFiles
-			slices.Reverse(currentFilesReversed)
-
-			messages := immich.UploadFiles(albums[i], currentFilesReversed)
-
-			fyne.Do(func() {
-				uploadingLabel.SetText("")
-
-				// infoDialog := dialog.NewInformation("Info", info, window)
-				// infoDialog.SetOnClosed(func() {
-				// 	os.Exit(0)
-				// })
-				// infoDialog.Show()
-
-				messages[0] = "#" + messages[0]
-				showScreenError(ScreenError{
-					Text: messages,
-					// we want it to self destruct
-				})
-			})
-		}()
+		})
 	}
 
-	var updateImagesGrid func(errIfNoneLeft bool)
+	var updateImagesGrid func(errIfNone bool)
 
-	updateImagesGrid = func(errIfNoneLeft bool) {
-		if len(currentFiles) == 0 {
-			if errIfNoneLeft {
-				showScreenError(ScreenError{Text: []string{
-					"no files", "none at all",
-				}})
-				return
-			}
-			albumDisableSelect.Set(true)
-		} else {
-			albumDisableSelect.Set(false)
+	onAlbumSelected = func(i int) {
+		selectedAlbumIndex = i
+
+		updateImagesGrid(false)
+
+		if len(currentFiles) > 0 {
+			go uploadNow()
+		}
+	}
+
+	updateImagesGrid = func(errIfNone bool) {
+		if errIfNone && len(currentFiles) == 0 {
+			showScreenError(ScreenError{Text: []string{
+				"no files", "none at all",
+			}})
+			return
 		}
 
 		imagesGrid := getImagesGrid(currentFiles, func(f *immich.File) {
@@ -224,7 +229,25 @@ func showScreenAlbumSelector() bool {
 			updateImagesGrid(true)
 		})
 
-		box = container.NewBorder(imagesGrid, nil, nil, nil, albumRadioList)
+		centerContainer := albumRadioList
+
+		if selectedAlbumIndex >= 0 {
+			text := ""
+			if len(currentFiles) > 0 {
+				text = "uploading to "
+			} else {
+				text = "about to upload to "
+			}
+			text += albums[selectedAlbumIndex].AlbumName + "..."
+
+			centerContainer = container.NewCenter(widget.NewLabel(text))
+
+			if len(currentFiles) > 0 {
+				go uploadNow()
+			}
+		}
+
+		box = container.NewBorder(imagesGrid, nil, nil, nil, centerContainer)
 
 		fyne.DoAndWait(func() {
 			window.SetContent(box)
