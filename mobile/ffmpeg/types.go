@@ -21,7 +21,22 @@ const (
 	SWS_BILINEAR      = 2
 
 	EAGAIN = 11
+
+	AVSEEK_FLAG_BACKWARD = 0x1
+
+	// AV_PKT_FLAG_KEY = 0x1
 )
+
+// var (
+// 	AV_TIME_BASE_Q = AVRational{
+// 		num: 1,
+// 		den: 1000000,
+// 	}
+// )
+
+func av_q2d(rational AVRational) float64 {
+	return float64(rational.num) / float64(rational.den)
+}
 
 type AVBufferRef struct{}
 type AVCodec struct{}
@@ -313,14 +328,14 @@ type AVFormatContext struct {
 }
 
 type AVFrame struct {
-	data     [8]*uint8
-	linesize [8]int32
-	// extended_data         **uint8_t
-	// width                 int
-	// height                int
-	// nb_samples            int
-	// format                int
-	// key_frame             int
+	data          [8]*uint8
+	linesize      [8]int32
+	extended_data **uint8
+	width         int64
+	height        int64
+	nb_samples    int64
+	format        int64
+	key_frame     int64
 	// pict_type             uint32
 	// sample_aspect_ratio   AVRational
 	// pts                   int64_t
@@ -383,14 +398,14 @@ type AVRational struct {
 }
 
 type AVStream struct {
-	av_class *AVClass
-	index    int32
-	id       int32
-	codecpar *AVCodecParameters
-	// priv_data           unsafe.Pointer
-	// time_base           AVRational
-	// start_time          int64
-	// duration            int64
+	av_class   *AVClass
+	index      int32
+	id         int32
+	codecpar   *AVCodecParameters
+	priv_data  unsafe.Pointer
+	time_base  AVRational
+	start_time int64
+	duration   int64
 	// nb_frames           int64
 	// disposition         int
 	// discard             int32

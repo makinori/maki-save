@@ -11,9 +11,7 @@ import (
 	"unsafe"
 )
 
-// TODO: get middle frame
-
-func ffmpegFirstFrame(filePath string) ([]byte, int, int, error) {
+func ffmpegMiddleFrame(filePath string) ([]byte, int, int, error) {
 	err := initFFmpeg()
 	if err != nil {
 		return []byte{}, 0, 0, err
@@ -36,10 +34,10 @@ func ffmpegFirstFrame(filePath string) ([]byte, int, int, error) {
 
 	streams := unsafe.Slice(fmtCtx.streams, fmtCtx.nb_streams)
 
-	var videoStreamIndex int = -1
+	var videoStreamIndex int32 = -1
 	for i, stream := range streams {
 		if stream.codecpar.codec_type == AVMEDIA_TYPE_VIDEO {
-			videoStreamIndex = i
+			videoStreamIndex = int32(i)
 			break
 		}
 	}
@@ -47,7 +45,21 @@ func ffmpegFirstFrame(filePath string) ([]byte, int, int, error) {
 		return []byte{}, 0, 0, errors.New("failed to find video stream")
 	}
 
-	codecParams := streams[videoStreamIndex].codecpar
+	videoStream := streams[videoStreamIndex]
+
+	// we want the middle frame
+	frameTimestamp := videoStream.duration / 2
+
+	// seek will jump the nearest keyframe before this frame
+	// so we still need to decode a few frames until we get to our timestamp
+
+	if av_seek_frame(
+		fmtCtx, videoStreamIndex, frameTimestamp, AVSEEK_FLAG_BACKWARD,
+	) < 0 {
+		return []byte{}, 0, 0, errors.New("failed to seek to middle frame")
+	}
+
+	codecParams := videoStream.codecpar
 
 	codec := avcodec_find_decoder(codecParams.codec_id)
 	if codec == nil {
@@ -103,7 +115,7 @@ func ffmpegFirstFrame(filePath string) ([]byte, int, int, error) {
 	defer av_packet_free(&packet)
 
 	for av_read_frame(fmtCtx, packet) >= 0 {
-		if int(packet.stream_index) != videoStreamIndex {
+		if packet.stream_index != videoStreamIndex {
 			av_packet_unref(packet)
 			continue
 		}
@@ -120,6 +132,10 @@ func ffmpegFirstFrame(filePath string) ([]byte, int, int, error) {
 			continue
 		} else if ret != 0 {
 			return []byte{}, 0, 0, errors.New("failed to receive frame")
+		}
+
+		if frame.key_frame < frameTimestamp {
+			continue
 		}
 
 		sws_scale(
@@ -146,7 +162,7 @@ func GetFrameFromVideo(inputData []byte) ([]byte, error) {
 		fmt.Println("removed tmp: " + tmp.Name())
 	}()
 
-	imageData, w, h, err := ffmpegFirstFrame(tmp.Name())
+	imageData, w, h, err := ffmpegMiddleFrame(tmp.Name())
 	if err != nil {
 		return []byte{}, err
 	}

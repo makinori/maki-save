@@ -25,8 +25,9 @@ var (
 	avcodec_alloc_context3        func(codec *AVCodec) *AVCodecContext
 	avcodec_free_context          func(avctx **AVCodecContext)
 	avcodec_parameters_to_context func(codec *AVCodecContext, par *AVCodecParameters) int32
-	avcodec_open2                 func(avctx *AVCodecContext, codec *AVCodec, options **AVDictionary) int
+	avcodec_open2                 func(avctx *AVCodecContext, codec *AVCodec, options **AVDictionary) int32
 	av_read_frame                 func(s *AVFormatContext, pkt *AVPacket) int32
+	av_seek_frame                 func(s *AVFormatContext, stream_index int32, timestamp int64, flags int32) int32
 
 	// avutil
 	av_frame_alloc           func() *AVFrame
@@ -51,6 +52,7 @@ var (
 	av_packet_unref       func(pkt *AVPacket)
 	avcodec_send_packet   func(avctx *AVCodecContext, avpkt *AVPacket) int32
 	avcodec_receive_frame func(avctx *AVCodecContext, frame *AVFrame) int32
+	// avcodec_flush_buffers func(avctx *AVCodecContext)
 )
 
 var initialized = false
@@ -140,6 +142,7 @@ func initFFmpeg() error {
 	r(&avcodec_parameters_to_context, avformat, "avcodec_parameters_to_context")
 	r(&avcodec_open2, avformat, "avcodec_open2")
 	r(&av_read_frame, avformat, "av_read_frame")
+	r(&av_seek_frame, avformat, "av_seek_frame")
 
 	avutil, err := openLib("libavutil.so")
 	if err != nil {
@@ -173,6 +176,7 @@ func initFFmpeg() error {
 	r(&av_packet_unref, avcodec, "av_packet_unref")
 	r(&avcodec_send_packet, avcodec, "avcodec_send_packet")
 	r(&avcodec_receive_frame, avcodec, "avcodec_receive_frame")
+	// r(&avcodec_flush_buffers, avcodec, "avcodec_flush_buffers")
 
 	return nil
 }
