@@ -1,6 +1,5 @@
 -   ffmpeg libs for windows
-    -   if no image cause fails, video icon doesnt show either
+-   if ffmpeg fail, video icon doesnt show either
 -   format long text better in screenerror.go
 -   too many filenames breaks the styling in album selector
 -   continue to show thumbnails after album uploaded? disable removing images?
--   ffmpeg support on linux

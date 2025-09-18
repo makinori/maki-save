@@ -20,13 +20,16 @@ func GetIntent() Intent {
 		// 	// Text: "https://x.com/withNagi_7/status/1951586795487216038", // multiple images
 		// 	Text: "https://x.com/chibikki_ikki/status/1953081885631918090", // only png
 		// }
-		// return Intent{
-		// 	Action: ACTION_SEND,
-		// 	Type:   "video/mp4",
-		// 	URI: []string{
-		// 		"/home/maki/Videos/worm.webm",
-		// 	},
-		// // }
+
+		return Intent{
+			Action: ACTION_SEND,
+			Type:   "video/mp4",
+			URI: []string{
+				// "/home/maki/Videos/worm.webm",
+				"/home/maki/Videos/sigma-event-horizon.mp4",
+			},
+		}
+
 		// return Intent{
 		// 	Action: ACTION_SENDTO,
 		// 	// Text:   "hi there,\nthis is a test url https://posh.mk/rLZ4pGHLaWb\nbye now",
@@ -34,13 +37,15 @@ func GetIntent() Intent {
 		// 	// Text: "https://posh.mk/aOxv4li5sWb", // sold item
 		// 	Text: "https://posh.mk/lXoDoOrDsWb", // large images missing
 		// }
-		return Intent{
-			Action: ACTION_SENDTO,
-			// Text:   "https://mastodon.hotmilk.space/@maki/113338487636859072",
-			Text: "https://mastodon.hotmilk.space/@maki/113172074826912415", // video
-			// Text: "https://mastodon.hotmilk.space/@maki/114674021457567710", // gif
-			// Text: "https://misskey.design/notes/acoult3ez23m0skq", // not mastodon
-		}
+
+		// return Intent{
+		// 	Action: ACTION_SENDTO,
+		// 	// Text:   "https://mastodon.hotmilk.space/@maki/113338487636859072",
+		// 	Text: "https://mastodon.hotmilk.space/@maki/113172074826912415", // video
+		// 	// Text: "https://mastodon.hotmilk.space/@maki/114674021457567710", // gif
+		// 	// Text: "https://misskey.design/notes/acoult3ez23m0skq", // not mastodon
+		// }
+
 		// return Intent{
 		// 	Action: ACTION_SENDTO,
 		// 	Text:   "https://bsky.app/profile/chibikki.bsky.social/post/3lyt3tr353c2p",

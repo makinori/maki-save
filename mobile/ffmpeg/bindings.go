@@ -1,7 +1,6 @@
 package ffmpeg
 
 import (
-	"errors"
 	"fmt"
 	"io/fs"
 	"os"
@@ -67,7 +66,13 @@ func openLib(name string) (uintptr, error) {
 		return handle, nil
 	}
 
-	handle, err := libOpen(filepath.Join(libsTmpDir, name))
+	libPath := name
+
+	if useEmbeddedLibraries {
+		libPath = filepath.Join(libsTmpDir, name)
+	}
+
+	handle, err := libOpen(libPath)
 	if err != nil {
 		return 0, err
 	}
@@ -83,36 +88,31 @@ func initFFmpeg() error {
 	}
 	initialized = true
 
-	if libsFS == nil {
-		closeFfmpeg()
-		return errors.New("no embedded libraries")
-	}
-
 	// make tmp dir
 
 	var err error
-	libsTmpDir, err = os.MkdirTemp("", "ffmpeg")
-	if err != nil {
-		closeFfmpeg()
-		return err
-	}
 
-	fmt.Println("added tmp dir: " + libsTmpDir)
-
-	libs, _ := fs.ReadDir(libsFS, ".")
-	for _, lib := range libs {
-		if lib.IsDir() {
-			continue
+	if useEmbeddedLibraries {
+		libsTmpDir, err = os.MkdirTemp("", "ffmpeg")
+		if err != nil {
+			closeFfmpeg()
+			return err
 		}
-		data, _ := fs.ReadFile(libsFS, lib.Name())
-		os.WriteFile(filepath.Join(libsTmpDir, lib.Name()), data, 0755)
+		fmt.Println("added tmp dir: " + libsTmpDir)
+
+		libs, _ := fs.ReadDir(libsFS, ".")
+		for _, lib := range libs {
+			if lib.IsDir() {
+				continue
+			}
+			data, _ := fs.ReadFile(libsFS, lib.Name())
+			os.WriteFile(filepath.Join(libsTmpDir, lib.Name()), data, 0755)
+		}
 	}
 
-	// preload libs. order matters
+	// order matters
 
-	for _, name := range []string{
-		"libc++_shared.so", "libavutil.so", "libswresample.so", "libavcodec.so",
-	} {
+	for _, name := range preloadLibs {
 		_, err := openLib(name)
 		if err != nil {
 			closeFfmpeg()
@@ -185,6 +185,7 @@ func closeFfmpeg() {
 	for _, handle := range handles {
 		libClose(handle)
 	}
+
 	handles = map[string]uintptr{}
 
 	if libsTmpDir != "" {

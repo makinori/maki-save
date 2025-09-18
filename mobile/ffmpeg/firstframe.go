@@ -11,6 +11,8 @@ import (
 	"unsafe"
 )
 
+// TODO: get middle frame
+
 func ffmpegFirstFrame(filePath string) ([]byte, int, int, error) {
 	err := initFFmpeg()
 	if err != nil {
