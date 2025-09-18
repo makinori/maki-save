@@ -158,7 +158,7 @@ func handleMediaIntent() {
 				return
 			}
 
-			thumbnail, err := ffmpeg.GetFrameFromVideo(data)
+			thumbnail, err := ffmpeg.GetMiddleFrameFromVideo(data)
 			if err != nil {
 				fmt.Println("failed to get thumbnail: " + err.Error())
 			} else {

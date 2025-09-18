@@ -149,7 +149,7 @@ func ffmpegMiddleFrame(filePath string) ([]byte, int, int, error) {
 	return buffer, int(codecCtx.width), int(codecCtx.height), nil
 }
 
-func GetFrameFromVideo(inputData []byte) ([]byte, error) {
+func GetMiddleFrameFromVideo(inputData []byte) ([]byte, error) {
 	tmp, err := os.CreateTemp("", "")
 	if err != nil {
 		return []byte{}, err
