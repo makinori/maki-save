@@ -12,6 +12,7 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"net/url"
 	"path"
 	"slices"
 	"strings"
@@ -22,18 +23,29 @@ import (
 )
 
 var (
-	//go:embed server.txt
-	IMMICH_SERVER string
-	//go:embed key.txt
+	//go:embed immich.txt
+	IMMICH_TXT     string
+	IMMICH_SERVER  *url.URL
 	IMMICH_API_KEY string
 
 	ErrDuplicate = errors.New("duplicate asset")
 )
 
 func init() {
-	IMMICH_SERVER = strings.TrimSpace(IMMICH_SERVER)
-	IMMICH_SERVER = strings.TrimSuffix(IMMICH_SERVER, "/")
-	IMMICH_API_KEY = strings.TrimSpace(IMMICH_API_KEY)
+	immichTxtLines := strings.Split(IMMICH_TXT, "\n")
+	if len(immichTxtLines) < 2 {
+		panic("immich.txt needs 2 lines")
+	}
+
+	var err error
+	IMMICH_SERVER, err = url.Parse(
+		strings.TrimSpace(immichTxtLines[0]),
+	)
+	if err != nil {
+		panic(err)
+	}
+
+	IMMICH_API_KEY = strings.TrimSpace(immichTxtLines[1])
 }
 
 type Album struct {
@@ -107,7 +119,10 @@ func stripExifDate(data []byte) ([]byte, error) {
 */
 
 func GetAlbums() ([]Album, error) {
-	req, err := http.NewRequest("GET", IMMICH_SERVER+"/api/albums", nil)
+	reqUrl := *IMMICH_SERVER // copy
+	reqUrl.Path = "/api/albums"
+
+	req, err := http.NewRequest("GET", reqUrl.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -164,7 +179,10 @@ func uploadAsset(data []byte, filename string, dateStr string) (string, error) {
 
 	mp.Close()
 
-	req, err := http.NewRequest("POST", IMMICH_SERVER+"/api/assets", mpBuf)
+	reqUrl := *IMMICH_SERVER // copy
+	reqUrl.Path = "/api/assets"
+
+	req, err := http.NewRequest("POST", reqUrl.String(), mpBuf)
 
 	if err != nil {
 		return "", err
@@ -220,8 +238,11 @@ func updateAsset(assetId string, dateStr string, description string) error {
 	buffer := new(bytes.Buffer)
 	buffer.Write(data)
 
+	reqUrl := *IMMICH_SERVER // copy
+	reqUrl.Path = "/api/assets"
+
 	req, err := http.NewRequest(
-		"PUT", IMMICH_SERVER+"/api/assets", buffer,
+		"PUT", reqUrl.String(), buffer,
 	)
 
 	if err != nil {
@@ -256,9 +277,10 @@ func addToAlbum(albumId string, assetId string) error {
 	buffer := new(bytes.Buffer)
 	buffer.Write(data)
 
-	req, err := http.NewRequest(
-		"PUT", IMMICH_SERVER+"/api/albums/"+albumId+"/assets", buffer,
-	)
+	reqUrl := *IMMICH_SERVER // copy
+	reqUrl.Path = "/api/albums/" + albumId + "/assets"
+
+	req, err := http.NewRequest("PUT", reqUrl.String(), buffer)
 
 	if err != nil {
 		return err

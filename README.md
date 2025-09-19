@@ -1,20 +1,27 @@
 # maki immich
 
-Tiny program to upload images to Immich
+Tiny program to upload to Immich like an image board
 
-Lets you select an album to upload one or more images to.<br/>
-Date and time also gets reset on those images.
+-   Select an album to upload one or more images to
+-   Date and time gets reset on those images
+-   Many go routines. It's very fast and optimized
+-   GNOME nautilus support
+-   Android support that scrapes links
 
--   Add `key.txt` and `server.txt` to `immich/` folder
+How
+
+-   Add `immich.txt` to `immich/` folder<br/>
+    **Line 1:** URL to instance<br/>
+    **Line 2:** API key
 
 <!-- -   Add `nitter.txt` (url) to `scrape/` folder<br/>
     Recommend using a private instance -->
 
 -   Add `mastofedi.txt` to `scrape/` folder<br/>
-    **First line:** URL to your instance<br/>
-    **Second line:** access token with `read:search` scope
+    **Line 1:** URL to your instance<br/>
+    **Line 2:** access token with `read:search` scope
 
-Make sure `kdialog` is installed<br/>
-`just build install` will install to `~/maki-immich`
+For desktop make sure `kdialog` is installed<br/>
+`just build install` will write to `~/maki-immich`
 
-There's also an Android version `just build-apk install-apk`
+For Android `just build-apk install-apk`

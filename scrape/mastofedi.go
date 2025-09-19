@@ -16,26 +16,26 @@ import (
 
 var (
 	//go:embed mastofedi.txt
-	mastodonTxt         string
-	mastodonInstanceURL *url.URL
-	mastodonAccessToken string
+	MASTODON_TXT          string
+	MASTODON_INSTANCE_URL *url.URL
+	MASTODON_ACCESS_TOKEN string
 )
 
 func init() {
-	mastodonTxtLines := strings.Split(mastodonTxt, "\n")
+	mastodonTxtLines := strings.Split(MASTODON_TXT, "\n")
 	if len(mastodonTxtLines) < 2 {
 		panic("mastodon.txt needs 2 lines")
 	}
 
 	var err error
-	mastodonInstanceURL, err = url.Parse(
+	MASTODON_INSTANCE_URL, err = url.Parse(
 		strings.TrimSpace(mastodonTxtLines[0]),
 	)
 	if err != nil {
 		panic(err)
 	}
 
-	mastodonAccessToken = strings.TrimSpace(mastodonTxtLines[1])
+	MASTODON_ACCESS_TOKEN = strings.TrimSpace(mastodonTxtLines[1])
 }
 
 // https://docs.joinmastodon.org/entities/Status/
@@ -64,7 +64,7 @@ func TestMastodonFediverse(tootURL *url.URL, extraData *unsafe.Pointer) bool {
 	params.Add("type", "statuses")
 	params.Add("q", tootURL.String())
 
-	requestURL := *mastodonInstanceURL // copy
+	requestURL := *MASTODON_INSTANCE_URL // copy
 	requestURL.Path = "/api/v2/search"
 	requestURL.RawQuery = params.Encode()
 
@@ -73,7 +73,7 @@ func TestMastodonFediverse(tootURL *url.URL, extraData *unsafe.Pointer) bool {
 		return false
 	}
 
-	req.Header.Add("Authorization", "Bearer "+mastodonAccessToken)
+	req.Header.Add("Authorization", "Bearer "+MASTODON_ACCESS_TOKEN)
 
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
