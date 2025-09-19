@@ -6,8 +6,13 @@ Lets you select an album to upload one or more images to.<br/>
 Date and time also gets reset on those images.
 
 -   Add `key.txt` and `server.txt` to `immich/` folder
+
 <!-- -   Add `nitter.txt` (url) to `scrape/` folder<br/>
     Recommend using a private instance -->
+
+-   Add `mastofedi.txt` to `scrape/` folder<br/>
+    **First line:** URL to your instance<br/>
+    **Second line:** access token with `read:search` scope
 
 Make sure `kdialog` is installed<br/>
 `just build install` will install to `~/maki-immich`

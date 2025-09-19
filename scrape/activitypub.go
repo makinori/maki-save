@@ -87,8 +87,39 @@ func guessActivityPubThumbnailFromURL(mediaURL string) string {
 		return mastodonVideoURLMatches[1] + "/small/" +
 			mastodonVideoURLMatches[2] + ".png"
 	}
-
 	return ""
+}
+
+func activityPubResolveHandle(username, host string) (string, error) {
+	acct := fmt.Sprintf("acct:%s@%s", username, host)
+
+	webFingerQuery := url.Values{}
+	webFingerQuery.Add("resource", acct)
+
+	var webFingerURL url.URL
+	webFingerURL.Host = host
+	webFingerURL.Scheme = "https"
+	webFingerURL.Path = "/.well-known/webfinger"
+	webFingerURL.RawQuery = webFingerQuery.Encode()
+
+	webFingerRes, err := http.Get(webFingerURL.String())
+	if err != nil {
+		return "", err
+	}
+	defer webFingerRes.Body.Close()
+
+	webFingerData, err := io.ReadAll(webFingerRes.Body)
+	if err != nil {
+		return "", err
+	}
+
+	var webFinger webFingerResponse
+	err = json.Unmarshal(webFingerData, &webFinger)
+	if err != nil {
+		return "", err
+	}
+
+	return "@" + strings.TrimPrefix(webFinger.Subject, "acct:"), nil
 }
 
 func ActivityPub(noteURL *url.URL, noteData *[]byte) ([]immich.File, error) {
@@ -121,37 +152,12 @@ func ActivityPub(noteURL *url.URL, noteData *[]byte) ([]immich.File, error) {
 		return []immich.File{}, err
 	}
 
-	acct := fmt.Sprintf("acct:%s@%s", person.PreferredUsername, noteURL.Host)
-
-	webFingerQuery := url.Values{}
-	webFingerQuery.Add("resource", acct)
-
-	var webFingerURL url.URL
-	webFingerURL.Host = noteURL.Host
-	webFingerURL.Scheme = noteURL.Scheme
-	webFingerURL.Path = "/.well-known/webfinger"
-	webFingerURL.RawQuery = webFingerQuery.Encode()
-
-	webFingerRes, err := http.Get(webFingerURL.String())
+	handle, err := activityPubResolveHandle(
+		person.PreferredUsername, noteURL.Host,
+	)
 	if err != nil {
 		return []immich.File{}, err
 	}
-	defer webFingerRes.Body.Close()
-
-	webFingerData, err := io.ReadAll(webFingerRes.Body)
-	if err != nil {
-		return []immich.File{}, err
-	}
-
-	var webFinger webFingerResponse
-	err = json.Unmarshal(webFingerData, &webFinger)
-	if err != nil {
-		return []immich.File{}, err
-	}
-
-	acct = webFinger.Subject
-
-	handle := "@" + strings.TrimPrefix(acct, "acct:")
 
 	// get files
 

@@ -1,0 +1,154 @@
+package scrape
+
+import (
+	_ "embed"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+	"strings"
+	"unsafe"
+
+	"github.com/makinori/maki-immich/immich"
+)
+
+var (
+	//go:embed mastofedi.txt
+	mastodonTxt         string
+	mastodonInstanceURL *url.URL
+	mastodonAccessToken string
+)
+
+func init() {
+	mastodonTxtLines := strings.Split(mastodonTxt, "\n")
+	if len(mastodonTxtLines) < 2 {
+		panic("mastodon.txt needs 2 lines")
+	}
+
+	var err error
+	mastodonInstanceURL, err = url.Parse(
+		strings.TrimSpace(mastodonTxtLines[0]),
+	)
+	if err != nil {
+		panic(err)
+	}
+
+	mastodonAccessToken = strings.TrimSpace(mastodonTxtLines[1])
+}
+
+// https://docs.joinmastodon.org/entities/Status/
+type mastodonStatus struct {
+	ID      string `json:"id"`
+	URI     string `json:"uri"` // more activitypub?
+	Account struct {
+		Username string `json:"username"`
+	} `json:"account"`
+	MediaAttachments []struct {
+		Type       string `json:"type"`
+		URL        string `json:"url"`
+		PreviewURL string `json:"preview_url"`
+	} `json:"media_attachments"`
+}
+
+type mastodonSearch struct {
+	Statuses []mastodonStatus `json:"statuses"`
+}
+
+func TestMastodonFediverse(tootURL *url.URL, extraData *unsafe.Pointer) bool {
+	params := url.Values{}
+	params.Add("resolve", "true")
+	params.Add("limit", "1")
+	params.Add("type", "statuses")
+	params.Add("q", tootURL.String())
+
+	requestURL := *mastodonInstanceURL // copy
+	requestURL.Path = "/api/v2/search"
+	requestURL.RawQuery = params.Encode()
+
+	req, err := http.NewRequest("GET", requestURL.String(), nil)
+	if err != nil {
+		return false
+	}
+
+	req.Header.Add("Authorization", "Bearer "+mastodonAccessToken)
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return false
+	}
+	defer res.Body.Close()
+
+	data, err := io.ReadAll(res.Body)
+	if err != nil {
+		return false
+	}
+
+	// os.WriteFile("test.json", data, 0644)
+
+	var search mastodonSearch
+	err = json.Unmarshal(data, &search)
+	if err != nil {
+		return false
+	}
+
+	if len(search.Statuses) == 0 {
+		return false
+	}
+
+	*extraData = unsafe.Pointer(&search.Statuses[0])
+
+	return true
+}
+
+func MastodonFediverse(
+	tootURL *url.URL, extraData *unsafe.Pointer,
+) ([]immich.File, error) {
+	if extraData == nil {
+		return []immich.File{}, errors.New("extra data is nil")
+	}
+
+	status := (*mastodonStatus)(*extraData)
+
+	// id will be different on federated servers from ours
+	// guess by extracting supposed activitypub note id from uri
+	// TODO: is there a better way to do this cause this is just guessing
+
+	noteIDMatches := activityPubNoteIDRegexp.FindStringSubmatch(status.URI)
+	if len(noteIDMatches) == 0 {
+		return []immich.File{}, errors.New("failed to find note id")
+	}
+
+	noteID := noteIDMatches[1]
+
+	// resolve handle with webfinger
+	// e.g. mastodon.hotmilk.space is actually just hotmilk.space
+
+	handle, err := activityPubResolveHandle(
+		status.Account.Username, tootURL.Host,
+	)
+	if err != nil {
+		return []immich.File{}, err
+	}
+
+	// get files
+
+	fileURLs := make([]string, len(status.MediaAttachments))
+	thumbnailURLs := make([]string, len(status.MediaAttachments))
+
+	for i, media := range status.MediaAttachments {
+		fileURLs[i] = media.URL
+		// https://docs.joinmastodon.org/entities/MediaAttachment/#type
+		switch media.Type {
+		case "video", "gifv":
+			thumbnailURLs[i] = media.PreviewURL
+		}
+	}
+
+	prefix := fmt.Sprintf(
+		"%s-%s-", handle, noteID,
+	)
+
+	return getFilesFromURLs(prefix, fileURLs, thumbnailURLs), nil
+}

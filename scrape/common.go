@@ -10,6 +10,7 @@ import (
 	"path"
 	"regexp"
 	"sync"
+	"unsafe"
 
 	"github.com/makinori/maki-immich/immich"
 )
@@ -88,7 +89,7 @@ func getFilesFromURLs(
 }
 
 func Test(scrapeURL *url.URL) (string, ScrapeFn) {
-	var extraData []byte
+	var extraData unsafe.Pointer
 	switch {
 	case TestTwitter(scrapeURL):
 		return "Twitter", Twitter
@@ -96,9 +97,15 @@ func Test(scrapeURL *url.URL) (string, ScrapeFn) {
 		return "Poshmark", Poshmark
 	case TestBluesky(scrapeURL):
 		return "Bluesky", Bluesky
-	case TestActivityPub(scrapeURL, &extraData):
-		return "ActivityPub", func(url *url.URL) ([]immich.File, error) {
-			return ActivityPub(url, &extraData)
+	// case TestActivityPub(scrapeURL, &extraData):
+	// 	return "ActivityPub", func(url *url.URL) ([]immich.File, error) {
+	// 		return ActivityPub(url, &extraData)
+	// 	}
+	// authenticated mastodon can search and resolve all links we'll encounter
+	// not all activitypub servers allow unauthenticated requests
+	case TestMastodonFediverse(scrapeURL, &extraData):
+		return "Mastodon Fediverse", func(url *url.URL) ([]immich.File, error) {
+			return MastodonFediverse(url, &extraData)
 		}
 	case TestGeneric(scrapeURL, &extraData):
 		return "Generic", func(url *url.URL) ([]immich.File, error) {
