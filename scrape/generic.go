@@ -17,18 +17,6 @@ func acceptableMediaContentType(contentType string) bool {
 }
 
 func TestGeneric(contentURL *url.URL, extraData *unsafe.Pointer) bool {
-	// extraData might contain data from previous response with a different
-	// accept header. check if this is already content we can upload
-
-	if extraData != nil {
-		contentType := http.DetectContentType(*(*[]byte)(*extraData))
-		if acceptableMediaContentType(contentType) {
-			return true
-		}
-	}
-
-	// ok request normally instead
-
 	res, err := http.Get(contentURL.String())
 	if err != nil {
 		return false
