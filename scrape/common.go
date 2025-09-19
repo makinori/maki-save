@@ -100,6 +100,10 @@ func Test(scrapeURL *url.URL) (string, ScrapeFn) {
 		return "ActivityPub", func(url *url.URL) ([]immich.File, error) {
 			return ActivityPub(url, &extraData)
 		}
+	case TestGeneric(scrapeURL, &extraData):
+		return "Generic", func(url *url.URL) ([]immich.File, error) {
+			return Generic(url, &extraData)
+		}
 	}
 	return "", func(url *url.URL) ([]immich.File, error) {
 		return []immich.File{}, errors.New("no scrape function")
