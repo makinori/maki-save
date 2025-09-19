@@ -1,10 +1,12 @@
 default:
 	@just --list
 
+# for linux
 [group("desktop")]
 build:
 	CGO_ENABLED=0 GOOS=linux go build -o maki-immich ./desktop
 
+# for linux
 [group("desktop")]
 install:
 	#!/usr/bin/env bash
@@ -30,6 +32,7 @@ install:
 	}'
 
 
+# for desktop without emulator
 [group("android")]
 start-android:
 	INTENT_TEST=1 go run ./mobile 
@@ -45,12 +48,13 @@ build-android:
 install-android:
 	adb install maki-immich.apk
 
-[group("desktop-mobile")]
-start-desktop-mobile +args:
+[group("mobile-on-desktop")]
+start-mobile-on-desktop +args:
 	go run ./mobile {{args}}
 
-[group("desktop-mobile")]
-build-desktop-mobile:
+# for windows using mingw
+[group("mobile-on-desktop")]
+build-mobile-on-desktop:
 	CGO_ENABLED=1 GOOS=windows \
 	CXX=x86_64-w64-mingw32-g++ CC=x86_64-w64-mingw32-gcc \
 	go build -ldflags -H=windowsgui -o maki-immich-mobile.exe ./mobile
