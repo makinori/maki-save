@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"image/color"
-	"io"
 	"math"
+	"net/http"
 	"os"
 	"slices"
 	"strings"
@@ -16,6 +16,7 @@ import (
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/makinori/maki-immich/immich"
+	"golang.org/x/image/webp"
 )
 
 func bytesToString(bytes int) string {
@@ -48,6 +49,41 @@ func getImageBgColor() color.NRGBA {
 
 var cachedFileCanvasImageMap = map[*immich.File]*canvas.Image{}
 
+func getCanvasImage(file *immich.File) *canvas.Image {
+	canvasImage, ok := cachedFileCanvasImageMap[file]
+	if ok {
+		return canvasImage
+	}
+
+	var data []byte
+	if len(file.Thumbnail) > 0 {
+		data = file.Thumbnail
+	} else {
+		data = file.Data
+	}
+
+	contentType := http.DetectContentType(data)
+
+	if contentType == "image/webp" {
+		image, err := webp.Decode(bytes.NewReader(data))
+		if err != nil {
+			fmt.Println(err)
+			return nil
+		}
+		canvasImage = canvas.NewImageFromImage(image)
+	} else {
+		canvasImage = canvas.NewImageFromReader(
+			bytes.NewReader(data), file.Name,
+		)
+	}
+
+	canvasImage.FillMode = canvas.ImageFillContain
+
+	cachedFileCanvasImageMap[file] = canvasImage
+
+	return canvasImage
+}
+
 func getImageWidget(file *immich.File, onClick func()) fyne.CanvasObject {
 	// background := canvas.NewRectangle(getImageBgColor())
 	button := widget.NewButton("", onClick)
@@ -68,22 +104,12 @@ func getImageWidget(file *immich.File, onClick func()) fyne.CanvasObject {
 	}
 
 	go func() {
-		image, ok := cachedFileCanvasImageMap[file]
-		if !ok {
-			var reader io.Reader
-			if len(file.Thumbnail) > 0 {
-				reader = bytes.NewReader(file.Thumbnail)
-			} else {
-				reader = bytes.NewReader(file.Data)
-			}
-
-			image = canvas.NewImageFromReader(reader, file.Name)
-			image.FillMode = canvas.ImageFillContain
-			cachedFileCanvasImageMap[file] = image
+		image := getCanvasImage(file)
+		if image != nil {
+			fyne.Do(func() {
+				imageStack.Objects[1] = image
+			})
 		}
-		fyne.Do(func() {
-			imageStack.Objects[1] = image
-		})
 	}()
 
 	return imageStack
