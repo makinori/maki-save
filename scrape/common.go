@@ -31,22 +31,21 @@ func getFilesFromURLs(
 	wg := sync.WaitGroup{}
 	for i, imageURL := range fileURLs {
 		wg.Add(1)
+
 		go func() {
 			defer wg.Done()
 
-			{
-				res, err := http.Get(imageURL)
-				if err != nil {
-					files[i].Err = err
-					return
-				}
-				defer res.Body.Close()
+			res, err := http.Get(imageURL)
+			if err != nil {
+				files[i].Err = err
+				return
+			}
+			defer res.Body.Close()
 
-				files[i].Data, err = io.ReadAll(res.Body)
-				if err != nil {
-					files[i].Err = err
-					return
-				}
+			files[i].Data, err = io.ReadAll(res.Body)
+			if err != nil {
+				files[i].Err = err
+				return
 			}
 
 			ext := path.Ext(imageURL)
@@ -61,25 +60,29 @@ func getFilesFromURLs(
 			}
 
 			files[i].Name = fmt.Sprintf("%s%02d%s", prefix, i+1, ext)
+		}()
 
-			thumbnailURL := thumbnailURLs[i]
-			if thumbnailURL == "" {
+		thumbnailURL := thumbnailURLs[i]
+		if thumbnailURL == "" {
+			continue
+		}
+
+		wg.Add(1)
+
+		go func() {
+			defer wg.Done()
+
+			res, err := http.Get(thumbnailURL)
+			if err != nil {
+				files[i].Err = err
 				return
 			}
+			defer res.Body.Close()
 
-			{
-				res, err := http.Get(thumbnailURL)
-				if err != nil {
-					files[i].Err = err
-					return
-				}
-				defer res.Body.Close()
-
-				files[i].Thumbnail, err = io.ReadAll(res.Body)
-				if err != nil {
-					files[i].Err = err
-					return
-				}
+			files[i].Thumbnail, err = io.ReadAll(res.Body)
+			if err != nil {
+				files[i].Err = err
+				return
 			}
 		}()
 	}

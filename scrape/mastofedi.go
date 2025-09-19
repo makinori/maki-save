@@ -46,9 +46,10 @@ type mastodonStatus struct {
 		Username string `json:"username"`
 	} `json:"account"`
 	MediaAttachments []struct {
-		Type       string `json:"type"`
-		URL        string `json:"url"`
-		PreviewURL string `json:"preview_url"`
+		Type        string `json:"type"`
+		URL         string `json:"url"`
+		PreviewURL  string `json:"preview_url"`
+		Description string `json:"description"`
 	} `json:"media_attachments"`
 }
 
@@ -150,5 +151,11 @@ func MastodonFediverse(
 		"%s-%s-", handle, noteID,
 	)
 
-	return getFilesFromURLs(prefix, fileURLs, thumbnailURLs), nil
+	files := getFilesFromURLs(prefix, fileURLs, thumbnailURLs)
+
+	for i, media := range status.MediaAttachments {
+		files[i].Description = media.Description // why not lol
+	}
+
+	return files, nil
 }
