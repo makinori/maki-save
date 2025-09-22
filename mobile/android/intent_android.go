@@ -3,7 +3,6 @@
 package android
 
 import (
-	"fmt"
 	"path"
 	"sync"
 	"unsafe"
@@ -66,8 +65,6 @@ func ReadContent(uri string) ([]byte, string) {
 
 	var cData *C.uint8_t
 	var cDataLength C.uint32_t
-
-	fmt.Println("\n1\n2\n3\n4\n5\n6\nMAKI WAS HERE\n1\n2\n3\n4\n5\n6\n")
 
 	var filename string
 

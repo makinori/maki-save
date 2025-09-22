@@ -102,16 +102,25 @@ func initFFmpeg() error {
 	initialized = true
 
 	// make tmp dir
-	// TODO: reuse same directory so we dont keep writing ffmpeg libs
 
 	var err error
 
 	if useEmbeddedLibraries {
-		libsTmpDir, err = os.MkdirTemp("", "ffmpeg")
-		if err != nil {
-			closeFfmpeg()
-			return err
+		if hasSelfContainedTmpDir {
+			libsTmpDir = filepath.Join(os.TempDir(), "ffmpeg")
+			err = os.Mkdir(libsTmpDir, 0755)
+			if err != nil {
+				closeFfmpeg()
+				return err
+			}
+		} else {
+			libsTmpDir, err = os.MkdirTemp("", "ffmpeg")
+			if err != nil {
+				closeFfmpeg()
+				return err
+			}
 		}
+
 		fmt.Println("added tmp dir: " + libsTmpDir)
 
 		libs, _ := fs.ReadDir(libsFS, ".")
@@ -119,8 +128,16 @@ func initFFmpeg() error {
 			if lib.IsDir() {
 				continue
 			}
+
 			data, _ := fs.ReadFile(libsFS, lib.Name())
-			os.WriteFile(filepath.Join(libsTmpDir, lib.Name()), data, 0755)
+			pathToWriteTo := filepath.Join(libsTmpDir, lib.Name())
+			// fmt.Println("writing: " + pathToWriteTo)
+
+			err = os.WriteFile(pathToWriteTo, data, 0755)
+			if err != nil {
+				closeFfmpeg()
+				return err
+			}
 		}
 	}
 

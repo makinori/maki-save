@@ -8,7 +8,8 @@ import (
 )
 
 var (
-	useEmbeddedLibraries = true
+	useEmbeddedLibraries   = true
+	hasSelfContainedTmpDir = true
 
 	//go:embed android-arm64-v8a
 	embedLibsFS embed.FS

@@ -5,7 +5,8 @@ package ffmpeg
 import "io/fs"
 
 var (
-	useEmbeddedLibraries = false
+	useEmbeddedLibraries   = false
+	hasSelfContainedTmpDir = false
 
 	libsFS fs.FS
 
