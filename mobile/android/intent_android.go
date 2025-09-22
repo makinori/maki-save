@@ -3,6 +3,8 @@
 package android
 
 import (
+	"fmt"
+	"path"
 	"sync"
 	"unsafe"
 
@@ -59,21 +61,31 @@ func GetIntent() Intent {
 	return intent
 }
 
-func ReadContent(uri string) []byte {
+func ReadContent(uri string) ([]byte, string) {
 	ensureInit()
 
 	var cData *C.uint8_t
 	var cDataLength C.uint32_t
 
+	fmt.Println("\n1\n2\n3\n4\n5\n6\nMAKI WAS HERE\n1\n2\n3\n4\n5\n6\n")
+
+	var filename string
+
 	driver.RunNative(func(ctx interface{}) error {
 		android := ctx.(*driver.AndroidContext)
 
-		C.readContent(
+		cDisplayName := C.readContent(
 			C.uintptr_t(android.VM),
 			C.uintptr_t(android.Env),
 			C.uintptr_t(android.Ctx),
-			C.CString(uri), &cData, &cDataLength,
+			C.CString(uri),
+			&cData, &cDataLength,
 		)
+
+		if cDisplayName != nil {
+			filename = C.GoString(cDisplayName)
+			C.free(unsafe.Pointer(cDisplayName))
+		}
 
 		return nil
 	})
@@ -82,5 +94,9 @@ func ReadContent(uri string) []byte {
 	copy(data, unsafe.Slice((*byte)(cData), cDataLength))
 	C.free(unsafe.Pointer(cData))
 
-	return data
+	if filename == "" {
+		filename = path.Base(uri) // not filepath because uri
+	}
+
+	return data, filename
 }

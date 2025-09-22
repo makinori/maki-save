@@ -44,6 +44,13 @@ static jmethodID uriToStringMethod;
 
 // https://developer.android.com/reference/android/content/ContentResolver
 static jmethodID contentResolverOpenInputStreamMethod;
+static jmethodID contentResolverQueryMethod;
+
+// https://developer.android.com/reference/android/database/Cursor
+static jmethodID cursorClose;
+static jmethodID cursorGetColumnIndex;
+static jmethodID cursorGetString;
+static jmethodID cursorMoveToFirst;
 
 // https://docs.oracle.com/javase/8/docs/api/java/io/InputStream.html
 static jmethodID inputStreamAvailableMethod;
@@ -92,6 +99,18 @@ void initJNI(uintptr_t javaVM, uintptr_t jniEnv, uintptr_t ctx)
     jclass contentResolverClass = (*env)->FindClass(env, "android/content/ContentResolver");
     contentResolverOpenInputStreamMethod = (*env)->GetMethodID(env, contentResolverClass,
         "openInputStream", "(Landroid/net/Uri;)Ljava/io/InputStream;");
+    contentResolverQueryMethod = (*env)->GetMethodID(env, contentResolverClass,
+        "query", "(Landroid/net/Uri;[Ljava/lang/String;Landroid/os/Bundle;Landroid/os/CancellationSignal;)Landroid/database/Cursor;");
+
+    jclass cursorClass = (*env)->FindClass(env, "android/database/Cursor");
+    cursorClose = (*env)->GetMethodID(env, cursorClass,
+        "close", "()V");
+    cursorGetColumnIndex = (*env)->GetMethodID(env, cursorClass,
+        "getColumnIndex", "(Ljava/lang/String;)I");
+    cursorGetString = (*env)->GetMethodID(env, cursorClass,
+        "getString", "(I)Ljava/lang/String;");
+    cursorMoveToFirst = (*env)->GetMethodID(env, cursorClass,
+        "moveToFirst", "()Z");
 
     jclass inputStreamClass = (*env)->FindClass(env, "java/io/InputStream");
     inputStreamAvailableMethod = (*env)->GetMethodID(env, inputStreamClass,
@@ -180,17 +199,62 @@ struct Intent getIntent(uintptr_t javaVM, uintptr_t jniEnv, uintptr_t ctx)
     return out;
 }
 
-void readContent(
+const char* getDisplayName(JNIEnv* env, jobject contentResolver, jobject uri)
+{
+    jclass stringClass = (*env)->FindClass(env, "java/lang/String");
+
+    jobjectArray projection = (*env)->NewObjectArray(env, 1, stringClass, NULL);
+
+    jstring displayNameColumn = (*env)->NewStringUTF(env, "_display_name");
+    (*env)->SetObjectArrayElement(env, projection, 0, displayNameColumn);
+    // (*env)->DeleteLocalRef(env, displayNameColumn);
+
+    jobject queryCursor = (*env)->CallObjectMethod(env, contentResolver,
+        contentResolverQueryMethod, uri, projection, NULL, NULL);
+
+    if (queryCursor == NULL) {
+        return "";
+    }
+
+    jboolean hasData = (*env)->CallBooleanMethod(env, queryCursor,
+        cursorMoveToFirst);
+
+    if (hasData == JNI_FALSE) {
+        (*env)->CallVoidMethod(env, queryCursor, cursorClose);
+        return "";
+    }
+
+    jint columnIndex = (*env)->CallIntMethod(env, queryCursor,
+        cursorGetColumnIndex, displayNameColumn);
+
+    if (columnIndex == -1) {
+        (*env)->CallVoidMethod(env, queryCursor, cursorClose);
+        return "";
+    }
+
+    jstring displayName = (*env)->CallObjectMethod(env, queryCursor,
+        cursorGetString, columnIndex);
+
+    if (displayName == NULL) {
+        (*env)->CallVoidMethod(env, queryCursor, cursorClose);
+        return "";
+    }
+
+    return jstringToC(env, displayName);
+}
+
+const char* readContent(
     uintptr_t javaVM, uintptr_t jniEnv, uintptr_t ctx,
-    const char* uriString, uint8_t** output, uint32_t* outputLength)
+    const char* uriString,
+    uint8_t** output, uint32_t* outputLength)
 {
     JNIEnv* env = (JNIEnv*)jniEnv;
 
     jstring uriJstring = (*env)->NewStringUTF(env, uriString);
 
     jclass uriClass = (*env)->FindClass(env, "android/net/Uri");
-    jobject uri = (*env)->CallStaticObjectMethod(env, uriClass, uriParseMethod,
-        uriJstring);
+    jobject uri = (*env)->CallStaticObjectMethod(env, uriClass,
+        uriParseMethod, uriJstring);
 
     jobject contentResolver = (*env)->CallObjectMethod(env, (jobject)ctx,
         contextGetContentResolverMethod);
@@ -210,7 +274,8 @@ void readContent(
 
     // assert availableBytes == readBytes
 
-    jbyte* dataPtr = (*env)->GetByteArrayElements(env, byteArray, JNI_FALSE); // false: direct pointer
+    // false: direct pointer
+    jbyte* dataPtr = (*env)->GetByteArrayElements(env, byteArray, JNI_FALSE);
     jsize dataLength = (*env)->GetArrayLength(env, byteArray);
 
     *output = malloc(dataLength);
@@ -218,4 +283,6 @@ void readContent(
     memcpy(*output, dataPtr, dataLength);
 
     (*env)->ReleaseByteArrayElements(env, byteArray, dataPtr, JNI_ABORT);
+
+    return getDisplayName(env, contentResolver, uri);
 }

@@ -4,6 +4,7 @@ package android
 
 import (
 	"os"
+	"path/filepath"
 )
 
 func GetIntent() Intent {
@@ -74,10 +75,10 @@ func GetIntent() Intent {
 	}
 }
 
-func ReadContent(uri string) []byte {
+func ReadContent(uri string) ([]byte, string) {
 	data, err := os.ReadFile(uri)
 	if err != nil {
-		return []byte{}
+		return []byte{}, ""
 	}
-	return data
+	return data, filepath.Base(uri) // on desktop use filepath
 }

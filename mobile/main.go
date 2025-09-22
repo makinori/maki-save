@@ -7,8 +7,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"path"
-	"path/filepath"
 	"runtime"
 	"slices"
 	"strings"
@@ -122,20 +120,12 @@ func handleMediaIntent() {
 		go func() {
 			defer wg.Done()
 
-			data := android.ReadContent(uri)
+			data, filename := android.ReadContent(uri)
 			if len(data) == 0 {
 				showScreenError(ScreenError{Text: []string{
 					"failed to read content", "returned 0 for uri:\n" + uri,
 				}})
 				return
-			}
-
-			var filename string
-			if usingDesktop {
-				filename = filepath.Base(uri)
-			} else {
-				// dealing with urls so only use /
-				filename = path.Base(uri)
 			}
 
 			unescapedFilename, err := url.PathUnescape(filename)
