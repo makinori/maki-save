@@ -4,16 +4,22 @@ package ffmpeg
 
 import (
 	"embed"
+	"io/fs"
 )
 
 var (
 	useEmbeddedLibraries = true
 
 	//go:embed android-arm64-v8a
-	libsFS embed.FS
+	embedLibsFS embed.FS
+	libsFS      fs.FS
 
 	preloadLibs = []string{
 		"libc++_shared.so", "libavutil.so",
 		"libswresample.so", "libavcodec.so",
 	}
 )
+
+func init() {
+	libsFS, _ = fs.Sub(embedLibsFS, "android-arm64-v8a")
+}

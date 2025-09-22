@@ -91,6 +91,7 @@ func initFFmpeg() error {
 	initialized = true
 
 	// make tmp dir
+	// TODO: reuse same directory so we dont keep writing ffmpeg libs
 
 	var err error
 

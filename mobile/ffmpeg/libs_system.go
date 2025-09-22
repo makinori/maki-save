@@ -2,14 +2,12 @@
 
 package ffmpeg
 
-import (
-	"embed"
-)
+import "io/fs"
 
 var (
 	useEmbeddedLibraries = false
 
-	libsFS embed.FS
+	libsFS fs.FS
 
 	preloadLibs = []string{}
 )
