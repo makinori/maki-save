@@ -150,6 +150,7 @@ func Poshmark(url *url.URL) ([]immich.File, error) {
 	mediaLength := 1 + len(listingDetails.Videos) + len(listingDetails.Pictures)
 	fileURLs := make([]string, mediaLength)
 	thumbnailURLs := make([]string, mediaLength)
+	isVideo := make([]bool, mediaLength)
 
 	i := 0
 
@@ -173,6 +174,7 @@ func Poshmark(url *url.URL) ([]immich.File, error) {
 
 		fileURLs[i] = video.Media.VideoMediaContent[biggestQualityKey]
 		thumbnailURLs[i] = video.Media.ThumbnailContent.getLargest()
+		isVideo[i] = true
 
 		i++
 	}
@@ -198,6 +200,9 @@ func Poshmark(url *url.URL) ([]immich.File, error) {
 
 	for i := range files {
 		files[i].Description = description
+		if isVideo[i] {
+			files[i].UIIsVideo = true
+		}
 	}
 
 	return files, nil

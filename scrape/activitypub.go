@@ -182,5 +182,13 @@ func ActivityPub(noteURL *url.URL, noteData *[]byte) ([]immich.File, error) {
 
 	prefix := fmt.Sprintf("%s-%s-", handle, noteID)
 
-	return getFilesFromURLs(prefix, fileURLs, thumbnailURLs), nil
+	files := getFilesFromURLs(prefix, fileURLs, thumbnailURLs)
+
+	for i, attachment := range foundAttachments {
+		if strings.HasPrefix(attachment.MediaType, "video/") {
+			files[i].UIIsVideo = true
+		}
+	}
+
+	return files, nil
 }

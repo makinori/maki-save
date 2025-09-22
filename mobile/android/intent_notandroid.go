@@ -46,22 +46,23 @@ func GetIntent() Intent {
 		// 	Text:   "https://bsky.app/profile/chibikki.bsky.social/post/3lyt3tr353c2p",
 		// }
 
-		return Intent{
-			Action: ACTION_SENDTO,
-			// Text:   "https://mastodon.hotmilk.space/@maki/113338487636859072",
-			// Text: "https://mastodon.hotmilk.space/@maki/113172074826912415", // video
-			// Text: "https://mastodon.hotmilk.space/@maki/114674021457567710", // gif
-			// not mastodon
-			// Text: "https://misskey.design/notes/acoult3ez23m0skq",
-			// Text: "https://labyrinth.zone/objects/ab982cfd-c27a-499d-9664-7555ea1839ed",
-			Text: "https://mk.absturztau.be/notes/acsmqmgpkequ010q",
-			// Text: "https://social.edist.ro/@CosmickTrigger/115210316299208892",
-		}
-
 		// return Intent{
 		// 	Action: ACTION_SENDTO,
-		// 	Text:   "https://hotmilk.space/u/bQ2LEe.jpg",
+		// 	// Text:   "https://mastodon.hotmilk.space/@maki/113338487636859072",
+		// 	// Text: "https://mastodon.hotmilk.space/@maki/113172074826912415", // video
+		// 	// Text: "https://mastodon.hotmilk.space/@maki/114674021457567710", // gif
+		// 	// not mastodon
+		// 	// Text: "https://misskey.design/notes/acoult3ez23m0skq",
+		// 	// Text: "https://labyrinth.zone/objects/ab982cfd-c27a-499d-9664-7555ea1839ed",
+		// 	Text: "https://mk.absturztau.be/notes/acsmqmgpkequ010q",
+		// 	// Text: "https://social.edist.ro/@CosmickTrigger/115210316299208892",
 		// }
+
+		return Intent{
+			Action: ACTION_SENDTO,
+			// Text:   "https://hotmilk.space/u/bQ2LEe.jpg",
+			Text: "https://hotmilk.space/u/dDYfyS.webm",
+		}
 	}
 
 	if len(os.Args) <= 1 {

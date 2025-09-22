@@ -10,6 +10,7 @@ import (
 	"unsafe"
 
 	"github.com/makinori/maki-immich/immich"
+	"github.com/makinori/maki-immich/mobile/ffmpeg"
 )
 
 func acceptableMediaContentType(contentType string) bool {
@@ -47,6 +48,12 @@ func Generic(contentURL *url.URL, extraData *unsafe.Pointer) ([]immich.File, err
 	file := immich.File{
 		Data: *(*[]byte)(*extraData),
 		Name: path.Base(contentURL.Path),
+	}
+
+	contentType := http.DetectContentType(file.Data)
+	if strings.HasPrefix(contentType, "video/") {
+		file.UIIsVideo = true
+		file.UIThumbnail, _ = ffmpeg.GetMiddleFrameFromVideo(file.Data)
 	}
 
 	return []immich.File{file}, nil

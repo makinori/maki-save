@@ -98,9 +98,9 @@ func main() {
 	for i, filePath := range filePaths {
 		data, err := os.ReadFile(filePath)
 		files[i] = &immich.File{
-			Data: data,
-			Name: filepath.Base(filePath),
-			Err:  err,
+			Data:  data,
+			Name:  filepath.Base(filePath),
+			UIErr: err,
 		}
 	}
 

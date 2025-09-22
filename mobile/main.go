@@ -148,11 +148,13 @@ func handleMediaIntent() {
 				return
 			}
 
+			currentFiles[i].UIIsVideo = true
+
 			thumbnail, err := ffmpeg.GetMiddleFrameFromVideo(data)
 			if err != nil {
 				fmt.Println("failed to get thumbnail: " + err.Error())
 			} else {
-				currentFiles[i].Thumbnail = thumbnail
+				currentFiles[i].UIThumbnail = thumbnail
 			}
 		}()
 	}

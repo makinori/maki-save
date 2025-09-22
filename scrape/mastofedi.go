@@ -155,6 +155,10 @@ func MastodonFediverse(
 
 	for i, media := range status.MediaAttachments {
 		files[i].Description = media.Description // why not lol
+		switch media.Type {
+		case "video", "gifv":
+			files[i].UIIsVideo = true
+		}
 	}
 
 	return files, nil

@@ -37,14 +37,14 @@ func getFilesFromURLs(
 
 			res, err := http.Get(imageURL)
 			if err != nil {
-				files[i].Err = err
+				files[i].UIErr = err
 				return
 			}
 			defer res.Body.Close()
 
 			files[i].Data, err = io.ReadAll(res.Body)
 			if err != nil {
-				files[i].Err = err
+				files[i].UIErr = err
 				return
 			}
 
@@ -74,14 +74,14 @@ func getFilesFromURLs(
 
 			res, err := http.Get(thumbnailURL)
 			if err != nil {
-				files[i].Err = err
+				files[i].UIErr = err
 				return
 			}
 			defer res.Body.Close()
 
-			files[i].Thumbnail, err = io.ReadAll(res.Body)
+			files[i].UIThumbnail, err = io.ReadAll(res.Body)
 			if err != nil {
-				files[i].Err = err
+				files[i].UIErr = err
 				return
 			}
 		}()

@@ -56,8 +56,8 @@ func getCanvasImage(file *immich.File) *canvas.Image {
 	}
 
 	var data []byte
-	if len(file.Thumbnail) > 0 {
-		data = file.Thumbnail
+	if len(file.UIThumbnail) > 0 {
+		data = file.UIThumbnail
 	} else {
 		data = file.Data
 	}
@@ -95,7 +95,7 @@ func getImageWidget(file *immich.File, onClick func()) fyne.CanvasObject {
 		emptyImage,
 	)
 
-	if len(file.Thumbnail) > 0 {
+	if file.UIIsVideo {
 		icon := widget.NewIcon(theme.MediaVideoIcon())
 		imageStack.Add(container.NewCenter(NewMinSize(
 			fyne.Size{Width: 36, Height: 36},

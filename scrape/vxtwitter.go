@@ -67,6 +67,7 @@ func vxTwitterProcessMedia(
 ) {
 	fileURLs := make([]string, len(tweetMedia))
 	thumbnailURLs := make([]string, len(tweetMedia))
+	isVideo := make([]bool, len(tweetMedia))
 
 	for i, media := range tweetMedia {
 		switch media.Type {
@@ -75,13 +76,22 @@ func vxTwitterProcessMedia(
 		case vxTwitterMediaTypeVideo, vxTwitterMediaTypeGIF:
 			fileURLs[i] = media.URL
 			thumbnailURLs[i] = vxTwitterImageURL(media.ThumbnailURL)
+			isVideo[i] = true
 		}
 	}
 
-	copy(outputFiles, getFilesFromURLs(
+	files := getFilesFromURLs(
 		fmt.Sprintf("%s-%s-", username, tweetID),
 		fileURLs, thumbnailURLs,
-	))
+	)
+
+	for i := range tweetMedia {
+		if isVideo[i] {
+			files[i].UIIsVideo = true
+		}
+	}
+
+	copy(outputFiles, files)
 }
 
 func vxTwitter(url *url.URL) ([]immich.File, error) {
@@ -150,8 +160,8 @@ func vxTwitter(url *url.URL) ([]immich.File, error) {
 
 	errText := ""
 	for _, file := range files {
-		if file.Err != nil {
-			errText += file.Err.Error() + "\n"
+		if file.UIErr != nil {
+			errText += file.UIErr.Error() + "\n"
 		}
 	}
 

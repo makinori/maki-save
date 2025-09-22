@@ -327,9 +327,12 @@ func addToAlbum(albumId string, assetId string) error {
 type File struct {
 	Data        []byte
 	Name        string
-	Err         error  // if failed to read
-	Thumbnail   []byte // for rendering ui
 	Description string
+	// related to rendering ui
+	// TODO: seperate this better
+	UIErr       error
+	UIThumbnail []byte
+	UIIsVideo   bool
 }
 
 var mediaContentTypeFileExts = map[string][]string{
@@ -428,8 +431,8 @@ func UploadFiles(album Album, files []*File) []string {
 			defer sem.Release(1)
 
 			var err error
-			if file.Err != nil {
-				err = file.Err
+			if file.UIErr != nil {
+				err = file.UIErr
 			} else {
 				time := now.Add(time.Millisecond * time.Duration(i*10))
 				err = UploadFile(album, file, time)

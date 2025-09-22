@@ -52,6 +52,7 @@ func ffmpegMiddleFrame(filePath string) ([]byte, int, int, error) {
 
 	// seek will jump the nearest keyframe before this frame
 	// so we still need to decode a few frames until we get to our timestamp
+	// TODO: this is actually kinda slow and i dont think file managers do this
 
 	if av_seek_frame(
 		fmtCtx, videoStreamIndex, frameTimestamp, AVSEEK_FLAG_BACKWARD,
