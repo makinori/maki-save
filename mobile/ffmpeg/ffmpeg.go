@@ -7,20 +7,80 @@ import (
 	"fmt"
 	"image"
 	"image/png"
-	"os"
 	"unsafe"
 )
 
-func ffmpegMiddleFrame(filePath string) ([]byte, int, int, error) {
+func ffmpegMiddleFrame(fileData []byte) ([]byte, int, int, error) {
 	err := initFFmpeg()
 	if err != nil {
 		return []byte{}, 0, 0, err
 	}
 	defer closeFfmpeg()
 
-	var fmtCtx *AVFormatContext
+	ioPosition := 0
+	ioBufferSize := 4096
+	ioBuffer := av_malloc(uintptr(ioBufferSize))
+	// dealloc? example doesnt free
 
-	if avformat_open_input(&fmtCtx, filePath, nil, nil) != 0 {
+	readPacket := func(_, bufferPtr unsafe.Pointer, bufferSize int32) int32 {
+		buffer := unsafe.Slice((*byte)(bufferPtr), bufferSize)
+
+		if ioPosition > len(fileData)-1 {
+			return AVERROR_EOF
+		}
+
+		copied := copy(buffer, fileData[ioPosition:])
+		ioPosition += copied
+
+		if copied == 0 {
+			return AVERROR_EOF
+		}
+
+		return int32(copied)
+	}
+
+	seek := func(_ unsafe.Pointer, offset int64, whence int) int64 {
+		// maybe need to len()-1
+		switch whence {
+		case SEEK_SET:
+			ioPosition = int(offset)
+		case SEEK_CUR:
+			ioPosition += int(offset)
+		case SEEK_END:
+			ioPosition = len(fileData) + int(offset)
+		case AVSEEK_SIZE:
+			return int64(len(fileData))
+		default:
+			fmt.Println("unknown seek whence", whence)
+			return -1
+		}
+		ioPosition = min(ioPosition, len(fileData))
+		return int64(ioPosition)
+	}
+
+	ioCtx := avio_alloc_context(
+		ioBuffer,
+		int32(ioBufferSize),
+		0, // read only
+		nil,
+		readPacket,
+		func(_, _ unsafe.Pointer, _ int32) int32 { return 0 },
+		seek,
+	)
+	if ioCtx == nil {
+		return []byte{}, 0, 0, errors.New("failed to allocate io context")
+	}
+	defer avio_context_free(&ioCtx)
+
+	fmtCtx := avformat_alloc_context()
+	if fmtCtx == nil {
+		return []byte{}, 0, 0, errors.New("failed to allocate format context")
+	}
+	// defer avformat_free_context(fmtCtx) // causes crash. example doesnt free
+
+	fmtCtx.pb = ioCtx
+
+	if avformat_open_input(&fmtCtx, "", nil, nil) != 0 {
 		return []byte{}, 0, 0, errors.New("failed to open file")
 	}
 	defer avformat_close_input(&fmtCtx)
@@ -30,7 +90,7 @@ func ffmpegMiddleFrame(filePath string) ([]byte, int, int, error) {
 	}
 
 	// dump to stderr
-	av_dump_format(fmtCtx, 0, filePath, 0)
+	av_dump_format(fmtCtx, 0, "", 0)
 
 	streams := unsafe.Slice(fmtCtx.streams, fmtCtx.nb_streams)
 
@@ -151,19 +211,7 @@ func ffmpegMiddleFrame(filePath string) ([]byte, int, int, error) {
 }
 
 func GetMiddleFrameFromVideo(inputData []byte) ([]byte, error) {
-	tmp, err := os.CreateTemp("", "")
-	if err != nil {
-		return []byte{}, err
-	}
-	tmp.Write(inputData)
-	tmp.Close()
-	fmt.Println("added tmp: " + tmp.Name())
-	defer func() {
-		os.Remove(tmp.Name())
-		fmt.Println("removed tmp: " + tmp.Name())
-	}()
-
-	imageData, w, h, err := ffmpegMiddleFrame(tmp.Name())
+	imageData, w, h, err := ffmpegMiddleFrame(inputData)
 	if err != nil {
 		return []byte{}, err
 	}

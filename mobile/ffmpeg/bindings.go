@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"unsafe"
 
 	"github.com/ebitengine/purego"
 )
@@ -28,6 +29,15 @@ var (
 	avcodec_open2                 func(avctx *AVCodecContext, codec *AVCodec, options **AVDictionary) int32
 	av_read_frame                 func(s *AVFormatContext, pkt *AVPacket) int32
 	av_seek_frame                 func(s *AVFormatContext, stream_index int32, timestamp int64, flags int32) int32
+	avio_alloc_context            func(
+		buffer unsafe.Pointer, buffer_size int32, write_flag int32, opaque unsafe.Pointer,
+		read_packet func(opaque, buffer unsafe.Pointer, buf_size int32) int32,
+		write_packet func(opaque, buffer unsafe.Pointer, buf_size int32) int32,
+		seek func(opaque unsafe.Pointer, offset int64, whence int) int64,
+	) *AVIOContext
+	avio_context_free      func(s **AVIOContext)
+	avformat_alloc_context func() *AVFormatContext
+	avformat_free_context  func(s *AVFormatContext)
 
 	// avutil
 	av_frame_alloc           func() *AVFrame
@@ -35,6 +45,7 @@ var (
 	av_image_get_buffer_size func(pix_fmt AVPixelFormat, width, height, align int32) int32
 	av_image_fill_arrays     func(dst_data **uint8, dst_linesize *int32, src *uint8,
 		pix_fmt AVPixelFormat, width, height, align int32) int32
+	av_malloc func(size uintptr) unsafe.Pointer
 
 	// swscale
 	sws_getContext func(srcW, srcH int32, srcFormat AVPixelFormat,
@@ -144,6 +155,10 @@ func initFFmpeg() error {
 	r(&avcodec_open2, avformat, "avcodec_open2")
 	r(&av_read_frame, avformat, "av_read_frame")
 	r(&av_seek_frame, avformat, "av_seek_frame")
+	r(&avio_alloc_context, avformat, "avio_alloc_context")
+	r(&avio_context_free, avformat, "avio_context_free")
+	r(&avformat_alloc_context, avformat, "avformat_alloc_context")
+	r(&avformat_free_context, avformat, "avformat_free_context")
 
 	avutil, err := openLib("libavutil.so")
 	if err != nil {
@@ -155,6 +170,7 @@ func initFFmpeg() error {
 	r(&av_frame_free, avutil, "av_frame_free")
 	r(&av_image_get_buffer_size, avutil, "av_image_get_buffer_size")
 	r(&av_image_fill_arrays, avutil, "av_image_fill_arrays")
+	r(&av_malloc, avutil, "av_malloc")
 
 	swscale, err := openLib("libswscale.so")
 	if err != nil {

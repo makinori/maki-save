@@ -25,14 +25,25 @@ const (
 	AVSEEK_FLAG_BACKWARD = 0x1
 
 	// AV_PKT_FLAG_KEY = 0x1
+
+	SEEK_SET    = 0
+	SEEK_CUR    = 1
+	SEEK_END    = 2
+	AVSEEK_SIZE = 0x10000
 )
 
-// var (
-// 	AV_TIME_BASE_Q = AVRational{
-// 		num: 1,
-// 		den: 1000000,
-// 	}
-// )
+func MKTAG(a, b, c, d rune) int32 {
+	return (int32)(a) | ((int32)(b) << 8) | ((int32)(c) << 16) | ((int32)(d) << 24)
+}
+
+var (
+	// AV_TIME_BASE_Q = AVRational{
+	// 	num: 1,
+	// 	den: 1000000,
+	// }
+
+	AVERROR_EOF = -MKTAG('E', 'O', 'F', ' ')
+)
 
 func av_q2d(rational AVRational) float64 {
 	return float64(rational.num) / float64(rational.den)
