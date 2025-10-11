@@ -91,6 +91,8 @@ func getFilesFromURLs(
 	return files
 }
 
+// TODO: why are we passing scrapeURL into ScrapeFn lol
+
 func Test(scrapeURL *url.URL) (string, ScrapeFn) {
 	var extraData unsafe.Pointer
 	switch {
