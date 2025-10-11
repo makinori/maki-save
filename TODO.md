@@ -3,3 +3,4 @@
 -   too many filenames breaks the styling in album selector
 -   continue to show thumbnails after album uploaded? disable removing images?
 -   progress bar
+-   change name and create icon
