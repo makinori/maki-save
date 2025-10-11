@@ -67,5 +67,5 @@ build-webext:
 	CGO_ENABLED=0 GOOS=js GOARCH=wasm \
 	go build -o ./webext/maki-immich-scrape.wasm ./webext
 
-	cd webext && zip -r ../maki-immich-scrape.zip \
+	cd webext && zip -r -FS ../maki-immich-scrape.zip \
 	*.js *.wasm icon.png manifest.json

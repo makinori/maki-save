@@ -1,4 +1,4 @@
-// dev tools in about:debugger
+// dev tools in about:debugging
 
 async function webExtAlert(tab, message) {
 	// const tabs = await browser.tabs.query({

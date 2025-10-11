@@ -1,6 +1,6 @@
 //go:build wasm
 
-// dev tools in about:debugger
+// dev tools in about:debugging
 
 package main
 
