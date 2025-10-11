@@ -1,6 +1,6 @@
 module github.com/makinori/maki-immich
 
-go 1.24.5
+go 1.25.2
 
 require (
 	fyne.io/fyne/v2 v2.6.2

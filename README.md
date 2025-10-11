@@ -8,7 +8,9 @@ Tiny program to upload to Immich like an image board
 -   GNOME nautilus support
 -   Android support that scrapes links
 
-How
+## how
+
+### requirements
 
 -   Add `immich.txt` to `immich/` folder<br/>
     **Line 1:** URL to instance<br/>
@@ -21,7 +23,17 @@ How
     **Line 1:** URL to your instance<br/>
     **Line 2:** access token with `read:search` scope
 
-For desktop make sure `kdialog` is installed<br/>
-`just build install` will write to `~/maki-immich`
+### building
 
-For Android `just build-apk install-apk`
+-   **For Linux desktop** make sure `kdialog` is installed<br/>
+    `just build install` will write to `~/maki-immich`<br/>
+    and print GNOME nautilus instructions
+
+-   **For Windows desktop,** to drag files onto an exe<br/>
+    `just build mobile-on-desktop`
+
+-   **For Android**, use share to scrape urls/files and upload<br/>
+    `just build-apk install-apk`
+
+-   **For Firefox**, to scrape urls to your downloads folder<br/>
+    `just build-webext`

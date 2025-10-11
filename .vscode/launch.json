@@ -21,6 +21,19 @@
 			"env": {
 				"INTENT_TEST": "1"
 			}
+		},
+		{
+			"name": "Firefox WebExt",
+			"type": "firefox",
+			"request": "launch",
+			"reAttach": true,
+			"addonPath": "${workspaceFolder}/webext",
+			"reloadOnChange": {
+				"watch": [
+					"${workspaceFolder}/webext/*.js",
+					"${workspaceFolder}/webext/*.wasm"
+				]
+			}
 		}
 	]
 }

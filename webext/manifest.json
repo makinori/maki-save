@@ -1,0 +1,18 @@
+{
+	"manifest_version": 2,
+	"name": "maki immich scrape",
+	"version": "0.1",
+	"description": "scrape images to save to downloads",
+	"permissions": ["activeTab", "downloads", "notifications", "<all_urls>"],
+	"background": {
+		"scripts": ["wasm_exec.js", "background.js"],
+		"persistent": false
+	},
+	"browser_action": {
+		"default_title": "save current tab"
+	},
+	"web_accessible_resources": ["maki-immich-scrape.wasm"],
+	"icons": {
+		"48": "icon.png"
+	}
+}
