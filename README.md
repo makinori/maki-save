@@ -1,25 +1,28 @@
 # maki immich
 
-Tiny program to upload to Immich like an image board
+tiny program to upload to immich like an image board
 
--   Select an album to upload one or more images to
--   Date and time gets reset on those images
--   Many go routines. It's very fast and optimized
--   GNOME nautilus support
--   Android support that scrapes links
+-   select an album to upload one or more images to
+-   date and time gets reset on those images
+-   many go routines. it's very fast
+-   gnome nautilus support to upload many
+-   android support that scrapes and uploads
+-   web extension that also scrapes
+
+this program is for my own leisure. you're on your own
 
 ## how
 
--   Add `immich.txt` to `immich/` folder<br/>
-    **Line 1:** URL to instance<br/>
-    **Line 2:** API key
+-   add `immich.txt` to `immich/` folder<br/>
+    **line 1:** url to instance<br/>
+    **line 2:** api key
 
 <!-- -   Add `nitter.txt` (url) to `scrape/` folder<br/>
     Recommend using a private instance -->
 
--   Add `mastofedi.txt` to `scrape/` folder<br/>
-    **Line 1:** URL to your instance<br/>
-    **Line 2:** access token with `read:search` scope
+-   add `mastofedi.txt` to `scrape/` folder<br/>
+    **line 1:** url to your mastodon instance<br/>
+    **line 2:** access token with `read:search` scope
 
 | platform | scraping | uploading | how                  | build                          |
 | -------- | -------- | --------- | -------------------- | ------------------------------ |
