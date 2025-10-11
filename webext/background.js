@@ -93,13 +93,13 @@ browser.contextMenus.onClicked.addListener((info, tab) => {
 browser.runtime.onInstalled.addListener(() => {
 	browser.contextMenus.create({
 		id: "maki-save-page",
-		title: "save page media",
+		title: "maki save current",
 		contexts: ["page"],
 		documentUrlPatterns: ["<all_urls>"],
 	});
 	browser.contextMenus.create({
 		id: "maki-save-link",
-		title: "save link media",
+		title: "maki save link",
 		contexts: ["link"],
 		documentUrlPatterns: ["<all_urls>"],
 	});
