@@ -35,7 +35,7 @@ this program is for my own leisure. you're on your own
     Recommend using a private instance -->
 
 -   add `mastofedi.txt` to `scrape/` folder<br/>
-    required for pulling from any activitypub source
+    required for pulling from any activitypub source<br/>
     **line 1:** url to your mastodon instance<br/>
     **line 2:** access token with `read:search` scope
 
