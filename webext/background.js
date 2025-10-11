@@ -23,16 +23,6 @@ function escapeStringRegexp(string) {
 }
 
 async function saveFile(filename, content) {
-	const items = await browser.downloads.search({
-		filenameRegex: "/" + escapeStringRegexp(filename) + "$",
-	});
-
-	if (items.some(item => item.exists)) {
-		return;
-	}
-
-	// TODO: if deleted from Downloads but still on disk, will save with a (1)
-
 	const blob = new Blob([content]);
 	const url = URL.createObjectURL(blob);
 
@@ -40,6 +30,7 @@ async function saveFile(filename, content) {
 		url: url,
 		filename,
 		saveAs: false,
+		conflictAction: "overwrite",
 	});
 
 	setTimeout(() => {
