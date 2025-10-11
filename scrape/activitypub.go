@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"regexp"
 	"strings"
+	"unsafe"
 
 	"github.com/makinori/maki-immich/immich"
 )
@@ -75,9 +76,9 @@ func getActivityPub(url string) ([]byte, error) {
 	return data, nil
 }
 
-func TestActivityPub(url *url.URL, extraData *[]byte) bool {
-	var err error
-	*extraData, err = getActivityPub(url.String())
+func TestActivityPub(url *url.URL, extraData *unsafe.Pointer) bool {
+	data, err := getActivityPub(url.String())
+	*extraData = unsafe.Pointer(&data)
 	return err == nil
 }
 
@@ -122,11 +123,11 @@ func activityPubResolveHandle(username, host string) (string, error) {
 	return "@" + strings.TrimPrefix(webFinger.Subject, "acct:"), nil
 }
 
-func ActivityPub(noteURL *url.URL, noteData *[]byte) ([]immich.File, error) {
+func ActivityPub(noteURL *url.URL, noteData unsafe.Pointer) ([]immich.File, error) {
 	// os.WriteFile("test.json", *noteData, 0644)
 
 	var note activityPubNote
-	err := json.Unmarshal(*noteData, &note)
+	err := json.Unmarshal(*(*[]byte)(noteData), &note)
 	if err != nil {
 		return []immich.File{}, err
 	}

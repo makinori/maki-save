@@ -104,13 +104,13 @@ func TestMastodonFediverse(tootURL *url.URL, extraData *unsafe.Pointer) bool {
 }
 
 func MastodonFediverse(
-	tootURL *url.URL, extraData *unsafe.Pointer,
+	tootURL *url.URL, extraData unsafe.Pointer,
 ) ([]immich.File, error) {
 	if extraData == nil {
 		return []immich.File{}, errors.New("extra data is nil")
 	}
 
-	status := (*mastodonStatus)(*extraData)
+	status := (*mastodonStatus)(extraData)
 
 	// id will be different on federated servers from ours
 	// guess by extracting supposed activitypub note id from uri

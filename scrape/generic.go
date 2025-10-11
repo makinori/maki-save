@@ -39,13 +39,13 @@ func TestGeneric(contentURL *url.URL, extraData *unsafe.Pointer) bool {
 	return true
 }
 
-func Generic(contentURL *url.URL, extraData *unsafe.Pointer) ([]immich.File, error) {
+func Generic(contentURL *url.URL, extraData unsafe.Pointer) ([]immich.File, error) {
 	if extraData == nil {
 		return []immich.File{}, errors.New("extra data is nil")
 	}
 
 	file := immich.File{
-		Data: *(*[]byte)(*extraData),
+		Data: *(*[]byte)(extraData),
 		Name: path.Base(contentURL.Path),
 	}
 

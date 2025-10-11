@@ -91,8 +91,7 @@ func getFilesFromURLs(
 	return files
 }
 
-// TODO: why are we passing scrapeURL into ScrapeFn lol
-
+// using test function to grab name first for ui
 func Test(scrapeURL *url.URL) (string, ScrapeFn) {
 	var extraData unsafe.Pointer
 	switch {
@@ -104,17 +103,17 @@ func Test(scrapeURL *url.URL) (string, ScrapeFn) {
 		return "Bluesky", Bluesky
 	// case TestActivityPub(scrapeURL, &extraData):
 	// 	return "ActivityPub", func(url *url.URL) ([]immich.File, error) {
-	// 		return ActivityPub(url, &extraData)
+	// 		return ActivityPub(url, extraData)
 	// 	}
-	// authenticated mastodon can search and resolve all links we'll encounter
+	// authenticated mastodon can search and resolve all links we encounter
 	// not all activitypub servers allow unauthenticated requests
 	case TestMastodonFediverse(scrapeURL, &extraData):
 		return "Mastodon Fediverse", func(url *url.URL) ([]immich.File, error) {
-			return MastodonFediverse(url, &extraData)
+			return MastodonFediverse(url, extraData)
 		}
 	case TestGeneric(scrapeURL, &extraData):
 		return "Generic", func(url *url.URL) ([]immich.File, error) {
-			return Generic(url, &extraData)
+			return Generic(url, extraData)
 		}
 	}
 	return "", func(url *url.URL) ([]immich.File, error) {
