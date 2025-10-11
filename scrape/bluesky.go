@@ -9,7 +9,7 @@ import (
 	"net/url"
 	"regexp"
 
-	"github.com/makinori/maki-immich/immich"
+	"github.com/makinori/maki-save/immich"
 )
 
 // what the fuck

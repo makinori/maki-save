@@ -8,7 +8,7 @@ import (
 	"net/url"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/makinori/maki-immich/immich"
+	"github.com/makinori/maki-save/immich"
 )
 
 var (

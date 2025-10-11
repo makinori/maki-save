@@ -11,9 +11,9 @@ import (
 	"syscall"
 	"syscall/js"
 
-	"github.com/makinori/maki-immich/immich"
-	"github.com/makinori/maki-immich/scrape"
-	"github.com/makinori/maki-immich/webext/jsutil"
+	"github.com/makinori/maki-save/immich"
+	"github.com/makinori/maki-save/scrape"
+	"github.com/makinori/maki-save/webext/jsutil"
 )
 
 func immichFilesToJS(files []immich.File) js.Value {

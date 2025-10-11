@@ -16,11 +16,11 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/data/binding"
-	"github.com/makinori/maki-immich/ffmpeg"
-	"github.com/makinori/maki-immich/immich"
-	"github.com/makinori/maki-immich/mobile/android"
-	"github.com/makinori/maki-immich/mobile/makitheme"
-	"github.com/makinori/maki-immich/scrape"
+	"github.com/makinori/maki-save/ffmpeg"
+	"github.com/makinori/maki-save/immich"
+	"github.com/makinori/maki-save/mobile/android"
+	"github.com/makinori/maki-save/mobile/makitheme"
+	"github.com/makinori/maki-save/scrape"
 	"mvdan.cc/xurls/v2"
 )
 
@@ -177,7 +177,7 @@ func loop() {
 		if !showingIntroScreen {
 			showScreenError(ScreenError{
 				Text: []string{
-					"#maki immich", "share an image to this app",
+					"#maki save", "share an image to this app",
 				},
 				// will conditionally self destruct below in main()
 				NoSelfDestruct: true,
@@ -212,7 +212,7 @@ func main() {
 	fyneApp = app.New()
 	fyneApp.Settings().SetTheme(&makitheme.Theme{})
 
-	window = fyneApp.NewWindow("maki immich")
+	window = fyneApp.NewWindow("maki save")
 
 	if usingDesktop {
 		window.Resize(fyne.Size{

@@ -12,7 +12,7 @@ import (
 	"sync"
 	"unsafe"
 
-	"github.com/makinori/maki-immich/immich"
+	"github.com/makinori/maki-save/immich"
 )
 
 var (

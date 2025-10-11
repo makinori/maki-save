@@ -1,7 +1,7 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" android:versionCode="1" android:versionName="0.0.1" package="cafe.maki.immich">
-	<application android:label="maki immich">
-		<activity android:name="org.golang.app.GoNativeActivity" android:label="maki immich">
-			<meta-data android:name="android.app.lib_name" android:value="maki_immich"/>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" android:versionCode="1" android:versionName="0.0.1" package="cafe.maki.save">
+	<application android:label="maki save">
+		<activity android:name="org.golang.app.GoNativeActivity" android:label="maki save">
+			<meta-data android:name="android.app.lib_name" android:value="maki_save"/>
 			<intent-filter>
 				<action android:name="android.intent.action.MAIN"/>
 				<category android:name="android.intent.category.LAUNCHER"/>

@@ -1,4 +1,4 @@
-module github.com/makinori/maki-immich
+module github.com/makinori/maki-save
 
 go 1.25.2
 

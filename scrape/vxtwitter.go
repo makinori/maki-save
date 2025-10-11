@@ -10,7 +10,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/makinori/maki-immich/immich"
+	"github.com/makinori/maki-save/immich"
 )
 
 // thank you so much https://github.com/dylanpdx/BetterTwitFix

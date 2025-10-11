@@ -42,7 +42,7 @@ async function scrapeURL(tab, url) {
 	try {
 		const go = new Go();
 		const { instance } = await WebAssembly.instantiateStreaming(
-			fetch("maki-immich-scrape.wasm"),
+			fetch("maki-save.wasm"),
 			go.importObject,
 		);
 		go.run(instance);
@@ -83,23 +83,23 @@ browser.browserAction.onClicked.addListener(tab => {
 });
 
 browser.contextMenus.onClicked.addListener((info, tab) => {
-	if (info.menuItemId == "maki-immich-page") {
+	if (info.menuItemId == "maki-save-page") {
 		scrapeURL(tab, tab.url);
-	} else if (info.menuItemId == "maki-immich-link") {
+	} else if (info.menuItemId == "maki-save-link") {
 		scrapeURL(tab, info.linkUrl);
 	}
 });
 
 browser.runtime.onInstalled.addListener(() => {
 	browser.contextMenus.create({
-		id: "maki-immich-page",
-		title: "scrape page",
+		id: "maki-save-page",
+		title: "save page media",
 		contexts: ["page"],
 		documentUrlPatterns: ["<all_urls>"],
 	});
 	browser.contextMenus.create({
-		id: "maki-immich-link",
-		title: "scrape link",
+		id: "maki-save-link",
+		title: "save link media",
 		contexts: ["link"],
 		documentUrlPatterns: ["<all_urls>"],
 	});

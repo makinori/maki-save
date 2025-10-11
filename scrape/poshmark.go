@@ -13,7 +13,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/makinori/maki-immich/immich"
+	"github.com/makinori/maki-save/immich"
 	"mvdan.cc/xurls/v2"
 )
 

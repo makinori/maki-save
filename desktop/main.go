@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/makinori/maki-immich/immich"
+	"github.com/makinori/maki-save/immich"
 )
 
 func selectAlbumKdialog() (immich.Album, error) {
@@ -18,7 +18,7 @@ func selectAlbumKdialog() (immich.Album, error) {
 	}
 
 	kdialogArgs := []string{
-		"--radiolist", "Select an album to upload to",
+		"--radiolist", "select an album to upload to",
 	}
 
 	for _, album := range albums {
@@ -60,7 +60,7 @@ func main() {
 	// get files
 
 	if len(os.Args) <= 1 {
-		dialog("Please select one or more files", true)
+		dialog("please select one or more files", true)
 		os.Exit(1)
 	}
 

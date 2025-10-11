@@ -3,16 +3,16 @@ default:
 
 # for linux
 [group("desktop")]
-build:
-	CGO_ENABLED=0 GOOS=linux go build -o maki-immich ./desktop
+build-linux:
+	CGO_ENABLED=0 GOOS=linux go build -o maki-save ./desktop
 
 # for linux
 [group("desktop")]
-install:
+install-linux:
 	#!/usr/bin/env bash
 	set -euo pipefail
-	cp maki-immich ~/maki-immich
-	echo "installed to ~/maki-immich"
+	cp maki-save ~/maki-save
+	echo "installed to ~/maki-save"
 	echo "sample config for nautilus:"
 	echo ""
 	echo "~/.local/share/actions-for-nautilus/config.json"
@@ -22,9 +22,9 @@ install:
 		"actions": [
 			{
 				"type": "command",
-				"label": "Maki Immich",
+				"label": "maki save",
 				"use_shell": true,
-				"command_line": "NAUTILUS=1 ~/maki-immich \"%U\"",
+				"command_line": "NAUTILUS=1 ~/maki-save \"%U\"",
 				"min_items": 1,
 				"filetypes": ["file"]
 			}
@@ -40,13 +40,13 @@ start-android:
 [group("android")]
 [working-directory("mobile")]
 build-android:
-	go tool fyne package -os android -app-id cafe.maki.immich \
-	-icon icon.png -name "maki immich" -release
-	mv maki_immich.apk ../maki-immich.apk
+	go tool fyne package -os android -app-id cafe.maki.save \
+	-icon ../icon/icon128.png -name "maki save" -release
+	mv maki_save.apk ../maki-save.apk
 
 [group("android")]
 install-android:
-	adb install maki-immich.apk
+	adb install maki-save.apk
 
 [group("mobile-on-desktop")]
 start-mobile-on-desktop +args:
@@ -57,7 +57,7 @@ start-mobile-on-desktop +args:
 build-mobile-on-desktop:
 	CGO_ENABLED=1 GOOS=windows \
 	CXX=x86_64-w64-mingw32-g++ CC=x86_64-w64-mingw32-gcc \
-	go build -ldflags -H=windowsgui -o maki-immich-mobile.exe ./mobile
+	go build -ldflags -H=windowsgui -o maki-save.exe ./mobile
 
 # for scraping on desktop
 [group("webext")]
@@ -65,7 +65,10 @@ build-webext:
 	cp "$(go env GOROOT)/lib/wasm/wasm_exec.js" ./webext
 
 	CGO_ENABLED=0 GOOS=js GOARCH=wasm \
-	go build -o ./webext/maki-immich-scrape.wasm ./webext
+	go build -o ./webext/maki-save.wasm ./webext
 
-	cd webext && zip -r -FS ../maki-immich-scrape.zip \
-	*.js *.wasm icon.png manifest.json
+	zip -jrFS maki-save-webext.zip \
+	webext/*.js webext/*.wasm webext/manifest.json \
+	icon/icon48.png icon/icon128.png 
+
+all: build-linux install-linux build-android build-mobile-on-desktop build-webext

@@ -1,9 +1,9 @@
-# maki immich
+# maki save
 
-tiny program to upload to immich like an image board
+scrape and save images to upload to immich
 
 -   select an album to upload one or more images to
--   date and time gets reset on those images
+-   date gets reset so images appear on top
 -   many go routines. it's very fast
 -   gnome nautilus support to upload many
 -   android support that scrapes and uploads
@@ -35,12 +35,13 @@ this program is for my own leisure. you're on your own
     Recommend using a private instance -->
 
 -   add `mastofedi.txt` to `scrape/` folder<br/>
+    required for pulling from any activitypub source
     **line 1:** url to your mastodon instance<br/>
     **line 2:** access token with `read:search` scope
 
-| platform | scrape | upload | how                  | build                          |
-| -------- | ------ | ------ | -------------------- | ------------------------------ |
-| linux    |        | ✔️     | command or nautilus  | `just build install`           |
-| windows  |        | ✔️     | drag images onto exe | `just build-mobile-on-desktop` |
-| android  | ✔️     | ✔️     | share with app       | `just build-apkinstall-apk`    |
-| firefox  | ✔️     |        | click extension      | `just build-webext`            |
+| platform | scrape | upload | how                  | build                            |
+| -------- | ------ | ------ | -------------------- | -------------------------------- |
+| linux    |        | ✔️     | command or nautilus  | `just build-linux install-linux` |
+| windows  |        | ✔️     | drag images onto exe | `just build-mobile-on-desktop`   |
+| android  | ✔️     | ✔️     | share with app       | `just build-apk install-apk`     |
+| firefox  | ✔️     |        | click extension      | `just build-webext`              |

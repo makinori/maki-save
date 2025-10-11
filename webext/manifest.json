@@ -1,5 +1,5 @@
 {
-	"name": "maki immich scrape",
+	"name": "maki save",
 	"author": "maki",
 	"homepage_url": "https://maki.cafe",
 	"version": "0.1",
@@ -13,13 +13,14 @@
 	"browser_action": {
 		"default_title": "save current tab"
 	},
-	"web_accessible_resources": ["maki-immich-scrape.wasm"],
+	"web_accessible_resources": ["maki-save.wasm"],
 	"icons": {
-		"48": "icon.png"
+		"48": "icon48.png",
+		"128": "icon128.png"
 	},
 	"browser_specific_settings": {
 		"gecko": {
-			"id": "immich-scrape@maki.cafe"
+			"id": "save@maki.cafe"
 		}
 	}
 }
