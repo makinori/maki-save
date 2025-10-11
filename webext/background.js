@@ -31,7 +31,7 @@ async function saveFile(filename, content) {
 		return;
 	}
 
-	// TODO: if deleted from disk but still in Downloads, will save with a (1)
+	// TODO: if deleted from Downloads but still on disk, will save with a (1)
 
 	const blob = new Blob([content]);
 	const url = URL.createObjectURL(blob);
@@ -47,7 +47,7 @@ async function saveFile(filename, content) {
 	}, 1000 * 10);
 }
 
-async function scrapeURL(tab) {
+async function scrapeURL(tab, url) {
 	try {
 		const go = new Go();
 		const { instance } = await WebAssembly.instantiateStreaming(
@@ -56,7 +56,7 @@ async function scrapeURL(tab) {
 		);
 		go.run(instance);
 
-		const { name, files } = await wasmScrapeURL(tab.url);
+		const { name, files } = await wasmScrapeURL(url);
 		const dirName = "maki_" + sanitizeDirName(name);
 
 		let error = "";
@@ -89,4 +89,27 @@ async function scrapeURL(tab) {
 
 browser.browserAction.onClicked.addListener(tab => {
 	scrapeURL(tab);
+});
+
+browser.contextMenus.onClicked.addListener((info, tab) => {
+	if (info.menuItemId == "maki-immich-page") {
+		scrapeURL(tab, tab.url);
+	} else if (info.menuItemId == "maki-immich-link") {
+		scrapeURL(tab, info.linkUrl);
+	}
+});
+
+browser.runtime.onInstalled.addListener(() => {
+	browser.contextMenus.create({
+		id: "maki-immich-page",
+		title: "scrape page",
+		contexts: ["page"],
+		documentUrlPatterns: ["<all_urls>"],
+	});
+	browser.contextMenus.create({
+		id: "maki-immich-link",
+		title: "scrape link",
+		contexts: ["link"],
+		documentUrlPatterns: ["<all_urls>"],
+	});
 });

@@ -3,7 +3,7 @@
 	"name": "maki immich scrape",
 	"version": "0.1",
 	"description": "scrape images to save to downloads",
-	"permissions": ["activeTab", "downloads", "notifications", "<all_urls>"],
+	"permissions": ["activeTab", "downloads", "contextMenus", "<all_urls>"],
 	"background": {
 		"scripts": ["wasm_exec.js", "background.js"],
 		"persistent": false
