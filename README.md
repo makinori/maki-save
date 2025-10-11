@@ -10,8 +10,6 @@ Tiny program to upload to Immich like an image board
 
 ## how
 
-### requirements
-
 -   Add `immich.txt` to `immich/` folder<br/>
     **Line 1:** URL to instance<br/>
     **Line 2:** API key
@@ -23,17 +21,9 @@ Tiny program to upload to Immich like an image board
     **Line 1:** URL to your instance<br/>
     **Line 2:** access token with `read:search` scope
 
-### building
-
--   **For Linux desktop** make sure `kdialog` is installed<br/>
-    `just build install` will write to `~/maki-immich`<br/>
-    and print GNOME nautilus instructions
-
--   **For Windows desktop,** to drag files onto an exe<br/>
-    `just build mobile-on-desktop`
-
--   **For Android**, use share to scrape urls/files and upload<br/>
-    `just build-apk install-apk`
-
--   **For Firefox**, to scrape urls to your downloads folder<br/>
-    `just build-webext`
+| platform | scraping | uploading | how                  | build                          |
+| -------- | -------- | --------- | -------------------- | ------------------------------ |
+| linux    |          | ✔️        | command or nautilus  | `just build install`           |
+| windows  |          | ✔️        | drag images onto exe | `just build-mobile-on-desktop` |
+| android  | ✔️       | ✔️        | share with app       | `just build-apkinstall-apk`    |
+| firefox  | ✔️       |           | click extension      | `just build-webext`            |
