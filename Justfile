@@ -6,15 +6,14 @@ build-linux:
 	CGO_ENABLED=0 GOOS=linux go build -o maki-save ./desktop
 
 [group("desktop")]
-install-linux:
+install-linux msg="1":
 	#!/usr/bin/env bash
 	set -euo pipefail
 	cp maki-save ~/maki-save
+	if [[ {{msg}} == "1" ]]; then
 	echo "installed to ~/maki-save"
 	echo "sample config for nautilus:"
-	echo ""
 	echo "~/.local/share/actions-for-nautilus/config.json"
-	echo ""
 	echo '{
 		"debug": false,
 		"actions": [
@@ -28,9 +27,9 @@ install-linux:
 			}
 		]
 	}'
+	fi
 
-
-# for desktop without emulator
+# on desktop without emulator
 [group("android")]
 start-android:
 	INTENT_TEST=1 go run ./mobile 
@@ -50,7 +49,7 @@ install-android:
 start-mobile-on-desktop +args:
 	go run ./mobile {{args}}
 
-# for windows using mingw. drag images into a single binary
+# for windows using mingw
 [group("mobile-on-desktop")]
 build-mobile-on-desktop:
 	CGO_ENABLED=1 GOOS=windows \
@@ -58,15 +57,25 @@ build-mobile-on-desktop:
 	go build -ldflags -H=windowsgui -o maki-save.exe ./mobile
 
 # for scraping on desktop
-[group("webext")]
-build-webext:
+[group("firefox")]
+build-web:
 	cp "$(go env GOROOT)/lib/wasm/wasm_exec.js" ./webext
 
 	CGO_ENABLED=0 GOOS=js GOARCH=wasm \
 	go build -o ./webext/maki-save.wasm ./webext
 
-	zip -jrFS maki-save-webext.zip \
+	zip -jrFS maki-save.xpi \
 	webext/*.js webext/*.wasm webext/manifest.json \
-	icon/icon48.png icon/icon128.png 
+	icon/icon48.png icon/icon128.png
 
-all: build-linux install-linux build-android build-mobile-on-desktop build-webext
+# xpinstall.signatures.required to false
+[group("firefox")]
+install-web:
+	firefox-developer-edition maki-save.xpi 
+
+all:
+	#!/usr/bin/env -S parallel --shebang --ungroup --jobs {{ num_cpus() }}
+	just build-linux install-linux "0"
+	just build-android
+	just build-mobile-on-desktop
+	just build-web install-web

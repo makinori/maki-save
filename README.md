@@ -44,4 +44,4 @@ this program is for my own leisure. you're on your own
 | linux    |        | ✔️     | command or nautilus  | `just build-linux install-linux` |
 | windows  |        | ✔️     | drag images onto exe | `just build-mobile-on-desktop`   |
 | android  | ✔️     | ✔️     | share with app       | `just build-apk install-apk`     |
-| firefox  | ✔️     |        | click extension      | `just build-webext`              |
+| firefox  | ✔️     |        | click extension      | `just build-web install-web`     |
