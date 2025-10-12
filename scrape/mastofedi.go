@@ -104,7 +104,7 @@ func TestMastodonFediverse(tootURL *url.URL, extraData *unsafe.Pointer) bool {
 }
 
 func MastodonFediverse(
-	tootURL *url.URL, extraData unsafe.Pointer,
+	extraData unsafe.Pointer,
 ) ([]immich.File, error) {
 	if extraData == nil {
 		return []immich.File{}, errors.New("extra data is nil")
@@ -126,8 +126,13 @@ func MastodonFediverse(
 	// resolve handle with webfinger
 	// e.g. mastodon.hotmilk.space is actually just hotmilk.space
 
+	noteURI, err := url.Parse(status.URI)
+	if err != nil {
+		return []immich.File{}, err
+	}
+
 	handle, err := activityPubResolveHandle(
-		status.Account.Username, tootURL.Host,
+		status.Account.Username, noteURI.Host,
 	)
 	if err != nil {
 		return []immich.File{}, err

@@ -109,7 +109,7 @@ func Test(scrapeURL *url.URL) (string, ScrapeFn) {
 	// not all activitypub servers allow unauthenticated requests
 	case TestMastodonFediverse(scrapeURL, &extraData):
 		return "Mastodon Fediverse", func(url *url.URL) ([]immich.File, error) {
-			return MastodonFediverse(url, extraData)
+			return MastodonFediverse(extraData)
 		}
 	case TestGeneric(scrapeURL, &extraData):
 		return "Generic", func(url *url.URL) ([]immich.File, error) {

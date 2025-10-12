@@ -1,12 +1,10 @@
 default:
 	@just --list
 
-# for linux
 [group("desktop")]
 build-linux:
 	CGO_ENABLED=0 GOOS=linux go build -o maki-save ./desktop
 
-# for linux
 [group("desktop")]
 install-linux:
 	#!/usr/bin/env bash
