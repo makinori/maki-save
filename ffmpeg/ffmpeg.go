@@ -10,6 +10,19 @@ import (
 	"unsafe"
 )
 
+func goString(cString *uint8) string {
+	var len uintptr
+	for range 12 {
+		if *(*uint8)(unsafe.Pointer(
+			(uintptr)(unsafe.Pointer(cString)) + len,
+		)) == 0 {
+			break
+		}
+		len++
+	}
+	return string(bytes.Runes(unsafe.Slice(cString, len)))
+}
+
 func ffmpegMiddleFrame(fileData []byte) ([]byte, int, int, error) {
 	err := initFFmpeg()
 	if err != nil {
@@ -149,26 +162,6 @@ func ffmpegMiddleFrame(fileData []byte) ([]byte, int, int, error) {
 	defer av_frame_free(&frame)
 	defer av_frame_free(&frameRGB)
 
-	numBytes := av_image_get_buffer_size(
-		AV_PIX_FMT_RGB24, codecCtx.width, codecCtx.height, 1,
-	)
-
-	var buffer = make([]byte, numBytes)
-	av_image_fill_arrays(
-		&frameRGB.data[0], &frameRGB.linesize[0], (*uint8)(&buffer[0]),
-		AV_PIX_FMT_RGB24, codecCtx.width, codecCtx.height, 1,
-	)
-
-	swsCtx := sws_getContext(
-		codecCtx.width, codecCtx.height, codecCtx.pix_fmt,
-		codecCtx.width, codecCtx.height, AV_PIX_FMT_RGB24,
-		SWS_BILINEAR, nil, nil, nil,
-	)
-	if swsCtx == nil {
-		fmt.Println("failed to get sws context")
-	}
-	defer sws_freeContext(swsCtx)
-
 	packet := av_packet_alloc()
 	if packet == nil {
 		fmt.Println("failed to allocate packet")
@@ -199,15 +192,38 @@ func ffmpegMiddleFrame(fileData []byte) ([]byte, int, int, error) {
 			continue
 		}
 
-		sws_scale(
-			swsCtx, &frame.data[0], &frame.linesize[0], 0,
-			codecCtx.height, &frameRGB.data[0], &frameRGB.linesize[0],
-		)
+		// got frame we want to use
 
 		break
 	}
 
-	return buffer, int(codecCtx.width), int(codecCtx.height), nil
+	// pix_fmt can be -1 if we do this before decoding at least one frame
+	swsCtx := sws_getContext(
+		frame.width, frame.height, codecCtx.pix_fmt,
+		frame.width, frame.height, AV_PIX_FMT_RGB24,
+		SWS_BILINEAR, nil, nil, nil,
+	)
+	if swsCtx == nil {
+		fmt.Println("failed to get sws context")
+	}
+	defer sws_freeContext(swsCtx)
+
+	numBytes := av_image_get_buffer_size(
+		AV_PIX_FMT_RGB24, frame.width, frame.height, 1,
+	)
+
+	var buffer = make([]byte, numBytes)
+	av_image_fill_arrays(
+		&frameRGB.data[0], &frameRGB.linesize[0], (*uint8)(&buffer[0]),
+		AV_PIX_FMT_RGB24, frame.width, frame.height, 1,
+	)
+
+	sws_scale(
+		swsCtx, &frame.data[0], &frame.linesize[0], 0,
+		frame.height, &frameRGB.data[0], &frameRGB.linesize[0],
+	)
+
+	return buffer, int(frame.width), int(frame.height), nil
 }
 
 func GetMiddleFrameFromVideo(inputData []byte) ([]byte, error) {

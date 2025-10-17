@@ -49,6 +49,28 @@ func av_q2d(rational AVRational) float64 {
 	return float64(rational.num) / float64(rational.den)
 }
 
+// type AVPacketSideDataType uint32
+
+// const (
+// 	AV_PKT_DATA_PALETTE AVPacketSideDataType = iota
+// 	AV_PKT_DATA_NEW_EXTRADATA
+// 	AV_PKT_DATA_PARAM_CHANGE
+// 	AV_PKT_DATA_H263_MB_INFO
+// 	AV_PKT_DATA_REPLAYGAIN
+// 	AV_PKT_DATA_DISPLAYMATRIX
+// 	// there are more
+// )
+
+const (
+	AV_DICT_MATCH_CASE      = 1
+	AV_DICT_IGNORE_SUFFIX   = 2
+	AV_DICT_DONT_STRDUP_KEY = 4
+	AV_DICT_DONT_STRDUP_VAL = 8
+	AV_DICT_DONT_OVERWRITE  = 16
+	AV_DICT_APPEND          = 32
+	AV_DICT_MULTIKEY        = 64
+)
+
 type AVBufferRef struct{}
 type AVCodec struct{}
 type AVCodecInternal struct{}
@@ -67,7 +89,7 @@ type SwsFilter struct{}
 type SwsContext struct{}
 
 type AVCodecID uint32
-type AVPixelFormat uint32
+type AVPixelFormat int32
 
 // these are not fully accurate, but work
 
@@ -230,7 +252,7 @@ type AVCodecContext struct {
 type AVCodecParameters struct {
 	codec_type int32
 	codec_id   AVCodecID
-	// codec_tag             uint32_t
+	codec_tag  uint32
 	// extradata             *uint8_t
 	// extradata_size        int
 	// coded_side_data       *AVPacketSideData
@@ -342,10 +364,10 @@ type AVFrame struct {
 	data          [8]*uint8
 	linesize      [8]int32
 	extended_data **uint8
-	width         int64
-	height        int64
-	nb_samples    int64
-	format        int64
+	width         int32
+	height        int32
+	nb_samples    int32
+	format        int32
 	key_frame     int64
 	// pict_type             uint32
 	// sample_aspect_ratio   AVRational
@@ -409,19 +431,19 @@ type AVRational struct {
 }
 
 type AVStream struct {
-	av_class   *AVClass
-	index      int32
-	id         int32
-	codecpar   *AVCodecParameters
-	priv_data  unsafe.Pointer
-	time_base  AVRational
-	start_time int64
-	duration   int64
-	// nb_frames           int64
-	// disposition         int
-	// discard             int32
-	// sample_aspect_ratio AVRational
-	// metadata            *AVDictionary
+	av_class            *AVClass
+	index               int32
+	id                  int32
+	codecpar            *AVCodecParameters
+	priv_data           unsafe.Pointer
+	time_base           AVRational
+	start_time          int64
+	duration            int64
+	nb_frames           int64
+	disposition         int32 // int
+	discard             int32
+	sample_aspect_ratio AVRational
+	metadata            *AVDictionary
 	// avg_frame_rate      AVRational
 	// attached_pic        AVPacket
 	// side_data           *AVPacketSideData
@@ -430,4 +452,9 @@ type AVStream struct {
 	// r_frame_rate        AVRational
 	// pts_wrap_bits       int
 	// _                   [4]byte
+}
+
+type AVDictionaryEntry struct {
+	key  *uint8
+	char *uint8
 }
