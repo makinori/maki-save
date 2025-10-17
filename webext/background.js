@@ -48,6 +48,10 @@ async function scrapeURL(tab, url) {
 		go.run(instance);
 
 		const { name, files } = await wasmScrapeURL(url);
+		if (files.length == 0) {
+			throw new Error("no files");
+		}
+
 		const dirName = "maki_" + sanitizeDirName(name);
 
 		let error = "";

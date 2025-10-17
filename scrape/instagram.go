@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"runtime"
 	"slices"
 	"strconv"
 	"strings"
@@ -24,6 +25,7 @@ var (
 
 	instagramIDRegexp = regexp.MustCompile(`\/(?:p|reels)\/(.+?)(?:\/|$)`)
 
+	// don't forget to also set header "js.fetch:redirect"
 	noRedirClient = *http.DefaultClient
 )
 
@@ -66,17 +68,40 @@ func getMetaContent(
 }
 
 func getInstaFixImageURL(imageURL string) (string, error) {
-	res, err := noRedirClient.Get(imageURL)
+	req, err := http.NewRequest("GET", imageURL, nil)
 	if err != nil {
 		return "", err
 	}
+
+	// it's not possible to read headers in js, we can error however
+	req.Header.Add("js.fetch:redirect", "error")
+	req.Header.Add("User-Agent", "curl")
+
+	res, err := noRedirClient.Do(req)
+	if runtime.GOOS != "js" && err != nil {
+		return "", err
+	}
+
+	if runtime.GOOS == "js" {
+		// there's no way to check if the error is a redirect error...
+		// well, it's more unlikely that instafix errored
+		if err != nil {
+			// return original image url which will redirect again
+			// it's inefficient but we're just limited to javascript
+			return imageURL, nil
+		}
+		// if no error, we probably got an empty 200 from instafix
+		return "", nil
+	}
+
+	res.Body.Close() // immediately
 
 	redirectURL := res.Header.Get("Location")
 	if redirectURL == "" {
 		return "", nil
 	}
 
-	return redirectURL, nil
+	return "", nil
 }
 
 func Instagram(scrapeURL *url.URL) ([]immich.File, error) {
@@ -90,7 +115,15 @@ func Instagram(scrapeURL *url.URL) ([]immich.File, error) {
 	newUrl := *scrapeURL
 	newUrl.Host = "www.uuinstagram.com"
 
-	res, err := noRedirClient.Get(newUrl.String())
+	req, err := http.NewRequest("GET", newUrl.String(), nil)
+	if err != nil {
+		return []immich.File{}, err
+	}
+
+	req.Header.Add("js.fetch:redirect", "error")
+	req.Header.Add("User-Agent", "curl")
+
+	res, err := noRedirClient.Do(req)
 	if err != nil {
 		return []immich.File{}, err
 	}
