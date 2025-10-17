@@ -4,6 +4,7 @@ go 1.25.2
 
 require (
 	fyne.io/fyne/v2 v2.6.2
+	github.com/PuerkitoBio/goquery v1.10.3
 	github.com/ebitengine/purego v0.8.4
 	github.com/forPelevin/gomoji v1.3.1
 	github.com/rivo/uniseg v0.4.7
@@ -19,6 +20,7 @@ require (
 	fyne.io/tools v1.6.1 // indirect
 	github.com/BurntSushi/toml v1.5.0 // indirect
 	github.com/akavel/rsrc v0.10.2 // indirect
+	github.com/andybalholm/cascadia v1.3.3 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.7 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fogleman/gg v1.3.0 // indirect

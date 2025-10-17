@@ -60,9 +60,17 @@ func GetIntent() Intent {
 
 		return Intent{
 			Action: ACTION_SENDTO,
-			// Text:   "https://hotmilk.space/u/bQ2LEe.jpg",
-			Text: "https://hotmilk.space/u/dDYfyS.webm",
+			// Text:   "https://www.instagram.com/reels/DOY2Bz0jH9n/", // reel
+			// Text: "https://www.instagram.com/p/CMRVWdeAClC/", // single image
+			// Text: "https://www.instagram.com/p/CFugc67oPNu/", // video (doesnt work with uuinstagram)
+			Text: "https://www.instagram.com/p/CD3LDKvAujc/", // multiple images
 		}
+
+		// return Intent{
+		// 	Action: ACTION_SENDTO,
+		// 	// Text:   "https://hotmilk.space/u/bQ2LEe.jpg",
+		// 	Text: "https://hotmilk.space/u/dDYfyS.webm",
+		// }
 	}
 
 	if len(os.Args) <= 1 {

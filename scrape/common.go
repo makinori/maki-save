@@ -29,13 +29,13 @@ func getFilesFromURLs(
 	files := make([]immich.File, len(fileURLs))
 
 	wg := sync.WaitGroup{}
-	for i, imageURL := range fileURLs {
+	for i, imageURLString := range fileURLs {
 		wg.Add(1)
 
 		go func() {
 			defer wg.Done()
 
-			res, err := http.Get(imageURL)
+			res, err := http.Get(imageURLString)
 			if err != nil {
 				files[i].UIErr = err
 				return
@@ -48,7 +48,13 @@ func getFilesFromURLs(
 				return
 			}
 
-			ext := path.Ext(imageURL)
+			imageURL, err := url.Parse(imageURLString)
+			if err != nil {
+				files[i].UIErr = err
+				return
+			}
+
+			ext := path.Ext(imageURL.Path)
 			ext = cleanUpExt.ReplaceAllString(ext, "")
 
 			if ext == "" {
@@ -101,6 +107,8 @@ func Test(scrapeURL *url.URL) (string, ScrapeFn) {
 		return "Poshmark", Poshmark
 	case TestBluesky(scrapeURL):
 		return "Bluesky", Bluesky
+	case TestInstagram(scrapeURL):
+		return "Instagram", Instagram
 	// case TestActivityPub(scrapeURL, &extraData):
 	// 	return "ActivityPub", func(url *url.URL) ([]immich.File, error) {
 	// 		return ActivityPub(url, extraData)
