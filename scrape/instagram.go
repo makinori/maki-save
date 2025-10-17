@@ -114,6 +114,7 @@ func Instagram(scrapeURL *url.URL) ([]immich.File, error) {
 
 	newUrl := *scrapeURL
 	newUrl.Host = "www.uuinstagram.com"
+	newUrl.RawQuery = "" // ?img_index=1 can break it
 
 	req, err := http.NewRequest("GET", newUrl.String(), nil)
 	if err != nil {
