@@ -23,6 +23,9 @@ var (
 		"eeinstagram.com",
 	}
 
+	// TODO: perhaps try multiple until one works
+	instagramProxy = "www.eeinstagram.com"
+
 	instagramIDRegexp = regexp.MustCompile(`\/(?:p|reels)\/(.+?)(?:\/|$)`)
 
 	// don't forget to also set header "js.fetch:redirect"
@@ -113,7 +116,7 @@ func Instagram(scrapeURL *url.URL) ([]immich.File, error) {
 	id := idMatches[1]
 
 	newUrl := *scrapeURL
-	newUrl.Host = "www.uuinstagram.com"
+	newUrl.Host = "www.eeinstagram.com"
 	newUrl.RawQuery = "" // ?img_index=1 can break it
 
 	req, err := http.NewRequest("GET", newUrl.String(), nil)
