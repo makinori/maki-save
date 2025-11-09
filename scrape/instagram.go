@@ -26,7 +26,7 @@ var (
 	// TODO: perhaps try multiple until one works
 	instagramProxy = "www.eeinstagram.com"
 
-	instagramIDRegexp = regexp.MustCompile(`\/(?:p|reels)\/(.+?)(?:\/|$)`)
+	instagramIDRegexp = regexp.MustCompile(`\/(?:p|reels?)\/(.+?)(?:\/|$)`)
 
 	// don't forget to also set header "js.fetch:redirect"
 	noRedirClient = *http.DefaultClient
@@ -76,8 +76,11 @@ func getInstaFixImageURL(imageURL string) (string, error) {
 		return "", err
 	}
 
-	// it's not possible to read headers in js, we can error however
-	req.Header.Add("js.fetch:redirect", "error")
+	if runtime.GOOS == "js" {
+		// it's not possible to read headers in js, we can error however
+		req.Header.Add("js.fetch:redirect", "error")
+	}
+
 	req.Header.Add("User-Agent", "curl")
 
 	res, err := noRedirClient.Do(req)
@@ -124,7 +127,10 @@ func Instagram(scrapeURL *url.URL) ([]immich.File, error) {
 		return []immich.File{}, err
 	}
 
-	req.Header.Add("js.fetch:redirect", "error")
+	if runtime.GOOS == "js" {
+		req.Header.Add("js.fetch:redirect", "error")
+	}
+
 	req.Header.Add("User-Agent", "curl")
 
 	res, err := noRedirClient.Do(req)

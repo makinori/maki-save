@@ -63,7 +63,8 @@ func GetIntent() Intent {
 			// Text:   "https://www.instagram.com/reels/DOY2Bz0jH9n/", // reel
 			// Text: "https://www.instagram.com/p/CMRVWdeAClC/", // single image
 			// Text: "https://www.instagram.com/p/CFugc67oPNu/", // video (doesnt work with uuinstagram)
-			Text: "https://www.instagram.com/p/CD3LDKvAujc/", // multiple images
+			// Text: "https://www.instagram.com/p/CD3LDKvAujc/", // multiple images
+			Text: "https://www.instagram.com/reel/DQrrB4rDtm1/?igsh=Z2RiZDViMjR3amh1", // link is longer
 		}
 
 		// return Intent{
