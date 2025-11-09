@@ -4,7 +4,6 @@ import (
 	_ "embed"
 	"errors"
 	"fmt"
-	"net/http"
 	"net/url"
 	"os"
 	"runtime"
@@ -16,6 +15,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/data/binding"
+	"github.com/gabriel-vasile/mimetype"
 	"github.com/makinori/maki-save/ffmpeg"
 	"github.com/makinori/maki-save/immich"
 	"github.com/makinori/maki-save/mobile/android"
@@ -137,14 +137,14 @@ func handleMediaIntent() {
 				Name: filename, Data: data,
 			}
 
-			// generate thumbnail if video
+			// generate thumbnail if missing for video
 
-			contentType := http.DetectContentType(data)
+			if len(currentFiles[i].UIThumbnail) > 0 {
+				return
+			}
 
-			// some videos aren't being recognized,
-			// so handle application/octet-stream too
-			if !strings.HasPrefix(contentType, "video/") &&
-				contentType != "application/octet-stream" {
+			mime := mimetype.Detect(data)
+			if mime == nil || !strings.HasPrefix(mime.String(), "video/") {
 				return
 			}
 

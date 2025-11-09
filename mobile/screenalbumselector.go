@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"image/color"
 	"math"
-	"net/http"
 	"os"
 	"slices"
 	"strings"
@@ -15,6 +14,7 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+	"github.com/gabriel-vasile/mimetype"
 	"github.com/makinori/maki-save/immich"
 	"golang.org/x/image/webp"
 )
@@ -62,9 +62,8 @@ func getCanvasImage(file *immich.File) *canvas.Image {
 		data = file.Data
 	}
 
-	contentType := http.DetectContentType(data)
-
-	if contentType == "image/webp" {
+	mime := mimetype.Detect(data)
+	if mime != nil && mime.String() == "image/webp" {
 		image, err := webp.Decode(bytes.NewReader(data))
 		if err != nil {
 			fmt.Println(err)

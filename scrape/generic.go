@@ -9,6 +9,7 @@ import (
 	"strings"
 	"unsafe"
 
+	"github.com/gabriel-vasile/mimetype"
 	"github.com/makinori/maki-save/immich"
 )
 
@@ -28,9 +29,8 @@ func TestGeneric(contentURL *url.URL, extraData *unsafe.Pointer) bool {
 		return false
 	}
 
-	contentType := http.DetectContentType(data)
-
-	if !acceptableMediaContentType(contentType) {
+	mime := mimetype.Detect(data)
+	if mime == nil || !acceptableMediaContentType(mime.String()) {
 		return false
 	}
 
@@ -49,8 +49,8 @@ func Generic(contentURL *url.URL, extraData unsafe.Pointer) ([]immich.File, erro
 		Name: path.Base(contentURL.Path),
 	}
 
-	contentType := http.DetectContentType(file.Data)
-	if strings.HasPrefix(contentType, "video/") {
+	mime := mimetype.Detect(file.Data)
+	if mime != nil && strings.HasPrefix(mime.String(), "video/") {
 		file.UIIsVideo = true
 		file.UIThumbnail, _ = getMiddleFrameFromVideo(file.Data)
 	}

@@ -4,3 +4,4 @@
 -   continue to show thumbnails after album uploaded? disable removing images?
 -   progress bar
 -   add patreon and pixiv
+-   are we running mimetype.Detect() too frequently?

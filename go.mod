@@ -7,6 +7,7 @@ require (
 	github.com/PuerkitoBio/goquery v1.10.3
 	github.com/ebitengine/purego v0.8.4
 	github.com/forPelevin/gomoji v1.3.1
+	github.com/gabriel-vasile/mimetype v1.4.11
 	github.com/rivo/uniseg v0.4.7
 	golang.org/x/image v0.29.0
 	golang.org/x/sync v0.16.0

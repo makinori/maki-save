@@ -19,6 +19,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gabriel-vasile/mimetype"
 	"golang.org/x/sync/semaphore"
 )
 
@@ -335,42 +336,27 @@ type File struct {
 	UIIsVideo   bool
 }
 
-var mediaContentTypeFileExts = map[string][]string{
-	"image/x-icon":    {".ico"},
-	"image/bmp":       {".bmp"},
-	"image/gif":       {".gif"},
-	"image/webp":      {".webp"},
-	"image/png":       {".png"},
-	"image/jpeg":      {".jpg", ".jpeg"},
-	"audio/aiff":      {".aiff"},
-	"audio/mpeg":      {".mp3"},
-	"application/ogg": {".ogg"},
-	"audio/midi":      {".mid"},
-	"video/avi":       {".avi"},
-	"audio/wave":      {".wav"},
-	"video/mp4":       {".mp4"},
-	"video/webm":      {".webm"},
-}
-
 func fixFileName(file *File) {
-	contentType := http.DetectContentType(file.Data)
-
-	fileExts, ok := mediaContentTypeFileExts[contentType]
-	if !ok {
+	mime := mimetype.Detect(file.Data)
+	if mime == nil {
 		return
 	}
 
-	ext := strings.ToLower(path.Ext(file.Name))
-	if slices.Contains(fileExts, ext) {
+	currentExt := strings.ToLower(path.Ext(file.Name))
+	detectedExt := mime.Extension()
+
+	if currentExt == detectedExt {
 		return
 	}
 
 	// sometimes longer than .abcd, probably not a file ext then
-	if len(ext) > 5 {
-		file.Name = file.Name + fileExts[0]
-	} else {
-		file.Name = file.Name[0:len(file.Name)-len(ext)] + fileExts[0]
+	if len(currentExt) > 5 {
+		file.Name = file.Name + detectedExt
+		return
 	}
+
+	// just replace with detected ext
+	file.Name = file.Name[0:len(file.Name)-len(currentExt)] + detectedExt
 }
 
 func UploadFile(album Album, file *File, date time.Time) error {

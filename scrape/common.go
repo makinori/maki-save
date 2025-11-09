@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"mime"
 	"net/http"
 	"net/url"
 	"path"
@@ -12,6 +11,7 @@ import (
 	"sync"
 	"unsafe"
 
+	"github.com/gabriel-vasile/mimetype"
 	"github.com/makinori/maki-save/immich"
 )
 
@@ -29,13 +29,13 @@ func getFilesFromURLs(
 	files := make([]immich.File, len(fileURLs))
 
 	wg := sync.WaitGroup{}
-	for i, imageURLString := range fileURLs {
+	for i, fileURLString := range fileURLs {
 		wg.Add(1)
 
 		go func() {
 			defer wg.Done()
 
-			res, err := http.Get(imageURLString)
+			res, err := http.Get(fileURLString)
 			if err != nil {
 				files[i].UIErr = err
 				return
@@ -48,20 +48,19 @@ func getFilesFromURLs(
 				return
 			}
 
-			imageURL, err := url.Parse(imageURLString)
+			fileURL, err := url.Parse(fileURLString)
 			if err != nil {
 				files[i].UIErr = err
 				return
 			}
 
-			ext := path.Ext(imageURL.Path)
+			ext := path.Ext(fileURL.Path)
 			ext = cleanUpExt.ReplaceAllString(ext, "")
 
 			if ext == "" {
-				contentType := http.DetectContentType(files[i].Data)
-				exts, _ := mime.ExtensionsByType(contentType)
-				if len(exts) > 0 {
-					ext = exts[len(exts)-1]
+				mime := mimetype.Detect(files[i].Data)
+				if mime != nil {
+					ext = mime.Extension()
 				}
 			}
 
