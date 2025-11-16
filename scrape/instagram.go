@@ -102,12 +102,7 @@ func getInstaFixImageURL(imageURL string) (string, error) {
 
 	res.Body.Close() // immediately
 
-	redirectURL := res.Header.Get("Location")
-	if redirectURL == "" {
-		return "", nil
-	}
-
-	return "", nil
+	return res.Header.Get("Location"), nil
 }
 
 func Instagram(scrapeURL *url.URL) ([]immich.File, error) {
