@@ -6,9 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
-	"runtime"
 	"slices"
-	"strconv"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
@@ -21,22 +19,27 @@ var (
 		"ddinstagram.com",
 		"uuinstagram.com",
 		"eeinstagram.com",
+		"vxinstagram.com",
 	}
 
 	// TODO: perhaps try multiple until one works
-	instagramProxy = "www.eeinstagram.com"
+	// instaFixProxy = "www.eeinstagram.com"
+
+	instagramEmbedProxy = "www.d.vxinstagram.com"
 
 	instagramIDRegexp = regexp.MustCompile(`\/(?:p|reels?)\/(.+?)(?:\/|$)`)
 
 	// don't forget to also set header "js.fetch:redirect"
-	noRedirClient = *http.DefaultClient
+	// noRedirClient = *http.DefaultClient
 )
 
+/*
 func init() {
 	noRedirClient.CheckRedirect = func(req *http.Request, via []*http.Request) error {
 		return http.ErrUseLastResponse
 	}
 }
+*/
 
 func TestInstagram(url *url.URL) bool {
 	return slices.Contains(
@@ -44,6 +47,7 @@ func TestInstagram(url *url.URL) bool {
 	)
 }
 
+/*
 func getMetaContent(
 	doc *goquery.Document, name string, resolveUrl *url.URL,
 ) (string, bool) {
@@ -69,6 +73,8 @@ func getMetaContent(
 	newUrl.Path = value
 	return newUrl.String(), true
 }
+
+// https://github.com/Wikidepia/InstaFix
 
 func getInstaFixImageURL(imageURL string) (string, error) {
 	req, err := http.NewRequest("GET", imageURL, nil)
@@ -105,7 +111,7 @@ func getInstaFixImageURL(imageURL string) (string, error) {
 	return res.Header.Get("Location"), nil
 }
 
-func Instagram(scrapeURL *url.URL) ([]immich.File, error) {
+func instaFix(scrapeURL *url.URL) ([]immich.File, error) {
 	idMatches := instagramIDRegexp.FindStringSubmatch(scrapeURL.Path)
 	if len(idMatches) == 0 {
 		return []immich.File{}, errors.New("failed to find id in url")
@@ -114,7 +120,7 @@ func Instagram(scrapeURL *url.URL) ([]immich.File, error) {
 	id := idMatches[1]
 
 	newUrl := *scrapeURL
-	newUrl.Host = "www.eeinstagram.com"
+	newUrl.Host = instaFixProxy
 	newUrl.RawQuery = "" // ?img_index=1 can break it
 
 	req, err := http.NewRequest("GET", newUrl.String(), nil)
@@ -213,4 +219,126 @@ func Instagram(scrapeURL *url.URL) ([]immich.File, error) {
 	)
 
 	return files, nil
+}
+*/
+
+func getMetaContent(
+	doc *goquery.Document, key string, keyValue string,
+) (string, bool) {
+	selection := doc.Find(fmt.Sprintf(`meta[%s="%s"]`, key, keyValue))
+	if selection == nil {
+		return "", false
+	}
+
+	value, ok := selection.Attr("content")
+	if !ok {
+		return "", false
+	}
+
+	return value, true
+}
+
+// https://github.com/Lainmode/InstagramEmbed-vxinstagram
+func instagramEmbed(scrapeURL *url.URL) ([]immich.File, error) {
+	idMatches := instagramIDRegexp.FindStringSubmatch(scrapeURL.Path)
+	if len(idMatches) == 0 {
+		return []immich.File{}, errors.New("failed to find id in url")
+	}
+
+	id := idMatches[1]
+
+	newURL := *scrapeURL
+	newURL.Host = instagramEmbedProxy
+	newURL.RawQuery = "" // not necessary
+
+	res, err := http.Get(newURL.String())
+	if err != nil {
+		return []immich.File{}, err
+	}
+	defer res.Body.Close()
+
+	doc, err := goquery.NewDocumentFromReader(res.Body)
+	if err != nil {
+		return []immich.File{}, err
+	}
+
+	// html, _ := doc.Html()
+	// os.WriteFile("test.html", []byte(html), 0644)
+
+	prefix := fmt.Sprintf("%s-", id)
+
+	// username fetching currently broken
+	username, ok := getMetaContent(doc, "property", "twitter:title")
+	if ok && strings.HasPrefix(username, "Error Fetching") {
+		username = ""
+	}
+	if username != "" {
+		prefix = fmt.Sprintf(
+			"%s-%s-", strings.TrimPrefix(username, "@"), id,
+		)
+	}
+
+	ogVideo, ok := getMetaContent(doc, "property", "og:video")
+	if ok {
+		files := getFilesFromURLs(prefix, []string{ogVideo}, []string{""})
+
+		files[0].UIIsVideo = true
+		files[0].UIThumbnail, _ = getMiddleFrameFromVideo(files[0].Data)
+
+		return files, nil
+	}
+
+	ogImage, ok := getMetaContent(doc, "property", "og:image")
+	if !ok {
+		return []immich.File{}, errors.New("failed to find images")
+	}
+
+	if !strings.Contains(ogImage, "/generated/") {
+		// just one image
+		return getFilesFromURLs(prefix, []string{ogImage}, []string{""}), nil
+	}
+
+	// iterate to find all
+
+	var imageURLs []string
+
+	if !strings.HasSuffix(newURL.Path, "/") {
+		newURL.Path += "/"
+	}
+
+	for i := 1; ; i++ {
+		imageURL := newURL
+		imageURL.Path += fmt.Sprintf("%d", i)
+
+		imageRes, err := http.Get(imageURL.String())
+		if err != nil {
+			return []immich.File{}, err
+		}
+		defer imageRes.Body.Close()
+
+		imageDoc, err := goquery.NewDocumentFromReader(imageRes.Body)
+		if err != nil {
+			return []immich.File{}, err
+		}
+
+		ogImage, ok := getMetaContent(imageDoc, "property", "og:image")
+		if !ok {
+			break
+		}
+
+		if strings.Contains(ogImage, "/generated/") {
+			// done itterating
+			break
+		}
+
+		imageURLs = append(imageURLs, ogImage)
+	}
+
+	return getFilesFromURLs(
+		prefix, imageURLs, make([]string, len(imageURLs)),
+	), nil
+}
+
+func Instagram(scrapeURL *url.URL) ([]immich.File, error) {
+	return instagramEmbed(scrapeURL)
 }
