@@ -6,11 +6,11 @@ build-linux:
 	CGO_ENABLED=0 GOOS=linux go build -o maki-save ./desktop
 
 [group("desktop")]
-install-linux msg="1":
+install-linux showmsg="true":
 	#!/usr/bin/env bash
 	set -euo pipefail
 	cp maki-save ~/maki-save
-	if [[ {{msg}} == "1" ]]; then
+	if [[ {{showmsg}} == "true" ]]; then
 	echo "installed to ~/maki-save"
 	echo "sample config for nautilus:"
 	echo "~/.local/share/actions-for-nautilus/config.json"
@@ -75,7 +75,7 @@ install-web:
 
 all:
 	#!/usr/bin/env -S parallel --shebang --ungroup --jobs {{ num_cpus() }}
-	just build-linux install-linux "0"
+	just build-linux install-linux "false"
 	just build-android
 	just build-mobile-on-desktop
 	just build-web install-web
